@@ -60,7 +60,7 @@ class PanelControllerTest {
         listOf(PanelState.EXPANDED_IDLE, PanelState.LISTENING, PanelState.PROCESSING,
             PanelState.AWAITING_CONFIRMATION, PanelState.SPEAKING).map { (it to Ev.FAIL) to PanelState.ERROR }
 
-    private fun controller(scope: TestScope, mic: FakeMic = FakeMic()) = PanelController(scope, mic)
+    private fun controller(scope: TestScope, mic: MicSession = FakeMic()) = PanelController(scope, mic)
 
     private fun PanelController.drive(target: PanelState): PanelController {
         when (target) {
