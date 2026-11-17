@@ -72,43 +72,53 @@ jobs:
           test -s "$APK"
           echo "path=$APK" >> "$GITHUB_OUTPUT"
           echo "bytes=$(stat -c%s "$APK")" >> "$GITHUB_OUTPUT"
+          SHA256="$(sha256sum "$APK" | awk '{print $1}')"
+          echo "sha256=$SHA256" >> "$GITHUB_OUTPUT"
           sha256sum "$APK"
 
       - name: Write build report
         env:
-          APK_PATH: ${{ steps.apk.outputs.path }}
-          APK_BYTES: ${{ steps.apk.outputs.bytes }}
+          APK_PATH: \${{ steps.apk.outputs.path }}
+          APK_BYTES: \${{ steps.apk.outputs.bytes }}
+          APK_SHA256: \${{ steps.apk.outputs.sha256 }}
         shell: bash
         run: |
-          cat > BUILD_REPORT.md <<EOF
+          cat > BUILD_REPORT.md <<'REPORT'
           # Quantum Alpha 0.1.1 — Build report
 
           **Status: GREEN — Android unit tests and debug APK build passed.**
 
-          - Workflow: ${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}
-          - Commit: ${GITHUB_SHA}
-          - Runner: ${RUNNER_OS}
+          - Workflow: __WORKFLOW_URL__
+          - Verified source commit: __COMMIT_SHA__
+          - Runner: __RUNNER_OS__
           - Java: Temurin 17
-          - Gradle: 8.10.2, official wrapper generated and executed
+          - Gradle: 8.10.2; official Gradle Wrapper generated, verified and committed
           - Android SDK: API 35, Build Tools 35.0.0
 
           ## Executed commands
-          - `gradle wrapper --gradle-version 8.10.2 --distribution-type bin` — passed
-          - `./gradlew --version` — passed
-          - `./gradlew --no-daemon clean` — passed
-          - `./gradlew --no-daemon testDebugUnitTest` — passed
-          - `./gradlew --no-daemon assembleDebug` — passed
+          - \`gradle wrapper --gradle-version 8.10.2 --distribution-type bin\` — passed
+          - \`./gradlew --version\` — passed
+          - \`./gradlew --no-daemon clean\` — passed
+          - \`./gradlew --no-daemon testDebugUnitTest\` — passed
+          - \`./gradlew --no-daemon assembleDebug\` — passed
           - APK non-empty check — passed
 
           ## APK
-          - Path: `${APK_PATH}`
-          - Size: ${APK_BYTES} bytes
-          - SHA-256: recorded in workflow logs.
-          - Download artifact: `Quantum-Alpha-0.1.1-debug-apk`
+          - Build output: \`__APK_PATH__\`
+          - Size: __APK_BYTES__ bytes
+          - SHA-256: \`__APK_SHA256__\`
+          - GitHub Actions artifact: \`Quantum-Alpha-0.1.1-debug-apk\`
 
-          ## Limitations
-          This proves compilation, unit tests and debug APK packaging only. It does not imply that microphone capture, STT, AI, TTS, device actions, overlays or billing are implemented. A real-device installation smoke test remains necessary.
-          EOF
+          ## Scope and limitations
+          This verifies compilation, JVM unit tests and debug APK packaging. It does not mean microphone capture, speech recognition, AI, TTS, device actions, system overlays or billing are implemented. Installation and interactive smoke testing on a physical Android device remain outstanding.
+          REPORT
+          sed -i \
+            -e "s|__WORKFLOW_URL__|\${GITHUB_SERVER_URL}/\${GITHUB_REPOSITORY}/actions/runs/\${GITHUB_RUN_ID}|g" \
+            -e "s|__COMMIT_SHA__|\${GITHUB_SHA}|g" \
+            -e "s|__RUNNER_OS__|\${RUNNER_OS}|g" \
+            -e "s|__APK_PATH__|\${APK_PATH}|g" \
+            -e "s|__APK_BYTES__|\${APK_BYTES}|g" \
+            -e "s|__APK_SHA256__|\${APK_SHA256}|g" BUILD_REPORT.md
 
       - name: Commit official wrapper and report
         if: github.event_name != 'pull_request'
