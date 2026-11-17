@@ -10,7 +10,7 @@ permissions:
   contents: write
 
 concurrency:
-  group: quantum-android-${{ github.ref }}
+  group: quantum-android-v2-${{ github.ref }}
   cancel-in-progress: false
 
 jobs:
@@ -78,9 +78,9 @@ jobs:
 
       - name: Write build report
         env:
-          APK_PATH: \${{ steps.apk.outputs.path }}
-          APK_BYTES: \${{ steps.apk.outputs.bytes }}
-          APK_SHA256: \${{ steps.apk.outputs.sha256 }}
+          APK_PATH: ${{ steps.apk.outputs.path }}
+          APK_BYTES: ${{ steps.apk.outputs.bytes }}
+          APK_SHA256: ${{ steps.apk.outputs.sha256 }}
         shell: bash
         run: |
           cat > BUILD_REPORT.md <<'REPORT'
@@ -113,24 +113,12 @@ jobs:
           This verifies compilation, JVM unit tests and debug APK packaging. It does not mean microphone capture, speech recognition, AI, TTS, device actions, system overlays or billing are implemented. Installation and interactive smoke testing on a physical Android device remain outstanding.
           REPORT
           sed -i \
-            -e "s|__WORKFLOW_URL__|\${GITHUB_SERVER_URL}/\${GITHUB_REPOSITORY}/actions/runs/\${GITHUB_RUN_ID}|g" \
-            -e "s|__COMMIT_SHA__|\${GITHUB_SHA}|g" \
-            -e "s|__RUNNER_OS__|\${RUNNER_OS}|g" \
-            -e "s|__APK_PATH__|\${APK_PATH}|g" \
-            -e "s|__APK_BYTES__|\${APK_BYTES}|g" \
-            -e "s|__APK_SHA256__|\${APK_SHA256}|g" BUILD_REPORT.md
-
-      - name: Commit official wrapper and report
-        if: github.event_name != 'pull_request'
-        shell: bash
-        run: |
-          git config user.name 'github-actions[bot]'
-          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git add gradlew gradlew.bat gradle/wrapper/gradle-wrapper.jar gradle/wrapper/gradle-wrapper.properties BUILD_REPORT.md
-          if ! git diff --cached --quiet; then
-            git commit -m 'Build: add verified Gradle wrapper and Alpha 0.1.1 report'
-            git push
-          fi
+            -e "s|__WORKFLOW_URL__|${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}|g" \
+            -e "s|__COMMIT_SHA__|${GITHUB_SHA}|g" \
+            -e "s|__RUNNER_OS__|${RUNNER_OS}|g" \
+            -e "s|__APK_PATH__|${APK_PATH}|g" \
+            -e "s|__APK_BYTES__|${APK_BYTES}|g" \
+            -e "s|__APK_SHA256__|${APK_SHA256}|g" BUILD_REPORT.md
 
       - name: Upload APK, wrapper and test reports
         uses: actions/upload-artifact@v4
