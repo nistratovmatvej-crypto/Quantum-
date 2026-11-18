@@ -9,7 +9,6 @@ import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -59,7 +58,8 @@ fun HomeScreen(
     settings: AssistantSettings,
     profileName: String?,
     onOpenSettings: () -> Unit,
-    onOpenPlans: () -> Unit
+    onOpenPlans: () -> Unit,
+    onEnableIsland: () -> Unit
 ) {
     val context = LocalContext.current
     val state by vm.panel.state.collectAsState()
@@ -85,11 +85,14 @@ fun HomeScreen(
                 .padding(horizontal = 24.dp).padding(top = 82.dp, bottom = 140.dp)
         ) {
             Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-                QuantumStar(Modifier.size(34.dp))
+                QuantumStar(Modifier.size(34.dp), glow = state == PanelState.LISTENING)
                 Spacer(Modifier.width(11.dp))
                 Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(1.dp)) {
                     Text("QUANTUM", style = MaterialTheme.typography.labelLarge, color = QuantumColors.AccentBright, fontWeight = FontWeight.Bold)
                     Text(profileName ?: settings.displayName, style = MaterialTheme.typography.titleMedium, color = QuantumColors.Porcelain)
+                }
+                TextButton(onClick = onEnableIsland) {
+                    Text("Остров", color = QuantumColors.AccentBright, style = MaterialTheme.typography.labelLarge)
                 }
                 TextButton(onClick = onOpenPlans) {
                     Text("Модели", color = QuantumColors.AccentBright, style = MaterialTheme.typography.labelLarge)
@@ -132,7 +135,7 @@ fun HomeScreen(
                             shadowElevation = 0.dp
                         ) {
                             Box(contentAlignment = Alignment.Center) {
-                                QuantumStar(Modifier.size(146.dp), glow = state == PanelState.LISTENING)
+                                QuantumStar(Modifier.size(146.dp), glow = state == PanelState.LISTENING || state == PanelState.PROCESSING)
                             }
                         }
                         AnimatedContent(
@@ -198,7 +201,7 @@ fun HomeScreen(
             ) {
                 Text("СОСТОЯНИЕ", style = MaterialTheme.typography.labelMedium, color = QuantumColors.TextMuted)
                 Spacer(Modifier.weight(1f))
-                Text("ALPHA 0.2", style = MaterialTheme.typography.labelMedium, color = QuantumColors.AccentBright)
+                Text("ALPHA 0.3", style = MaterialTheme.typography.labelMedium, color = QuantumColors.AccentBright)
             }
             Column(verticalArrangement = Arrangement.spacedBy(1.dp)) {
                 StatusLine("Распознавание речи", if (live) "Активно" else "Ожидает запуска", live)
