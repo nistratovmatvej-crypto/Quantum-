@@ -67,7 +67,7 @@ class QuantumIslandService : Service() {
     private fun showIsland() {
         if (!Settings.canDrawOverlays(this)) { stopSelf(); return }
         if (island == null) {
-            val view = IslandView()
+            val view = IslandView(this)
             view.setOnLongClickListener {\n                removeIsland()\n                stopForeground(STOP_FOREGROUND_REMOVE)\n                stopSelf()\n                true\n            }\n            view.setOnClickListener {
                 if (expanded) {
                     expanded = false
@@ -158,7 +158,7 @@ private class IslandView : View {
     private val bg = Paint(Paint.ANTI_ALIAS_FLAG)
     private val edge = Paint(Paint.ANTI_ALIAS_FLAG).apply { style = Paint.Style.STROKE; strokeWidth = 1.2f }
     private val cyan = Paint(Paint.ANTI_ALIAS_FLAG)
-    private val white = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = android.graphics.Color.rgb(244,243,239); textSize = 13f; typeface = Typeface.create("sans-serif-medium", Typeface.MEDIUM) }
+    private val white = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = android.graphics.Color.rgb(244,243,239); textSize = 13f; typeface = Typeface.create("sans-serif-medium", Typeface.NORMAL) }
     private val muted = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = android.graphics.Color.rgb(145,168,181); textSize = 10f }
     private val rect = RectF()
     private var compact = false
