@@ -1,5 +1,6 @@
 package com.quantum.assistant
 
+import android.content.Intent
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -15,6 +16,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import com.quantum.assistant.overlay.QuantumOverlayService
 import com.quantum.assistant.ui.home.HomeScreen
 import com.quantum.assistant.ui.home.HomeViewModel
 import com.quantum.assistant.ui.home.HomeViewModelFactory
@@ -68,9 +70,19 @@ class MainActivity : ComponentActivity() {
         }
     }
 
+    override fun onStart() {
+        super.onStart()
+        if (getSharedPreferences("quantum_overlay", MODE_PRIVATE).getBoolean("enabled", false)) {
+            startService(Intent(this, QuantumOverlayService::class.java).setAction(QuantumOverlayService.ACTION_APP_FOREGROUND))
+        }
+    }
+
     override fun onStop() {
         val app = application as QuantumApp
         ViewModelProvider(this, HomeViewModelFactory(app.micSession))[HomeViewModel::class.java].panel.onClose()
+        if (getSharedPreferences("quantum_overlay", MODE_PRIVATE).getBoolean("enabled", false)) {
+            startService(Intent(this, QuantumOverlayService::class.java).setAction(QuantumOverlayService.ACTION_APP_BACKGROUND))
+        }
         super.onStop()
     }
 }
