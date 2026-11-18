@@ -23,10 +23,10 @@ fun QuantumStar(modifier: Modifier = Modifier, glow: Boolean = false) {
     val haloAlpha by transition.animateFloat(
         initialValue = if (glow) .16f else .10f,
         targetValue = if (glow) .34f else .10f,
-        animationSpec = if (glow) infiniteRepeatable(
-            animation = tween(1450, easing = FastOutSlowInEasing),
+        animationSpec = infiniteRepeatable(
+            animation = tween(if (glow) 1450 else 1, easing = FastOutSlowInEasing),
             repeatMode = RepeatMode.Reverse
-        ) else tween(0),
+        ),
         label = "halo-alpha"
     )
     Canvas(modifier) {
