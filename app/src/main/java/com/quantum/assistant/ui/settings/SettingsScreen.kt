@@ -19,6 +19,10 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.core.content.ContextCompat
+import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
@@ -29,6 +33,9 @@ import androidx.compose.material3.RadioButton
 import androidx.compose.material3.Slider
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.setValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -37,6 +44,7 @@ import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.quantum.assistant.BuildConfig
+import com.quantum.assistant.overlay.QuantumOverlayService
 import com.quantum.assistant.data.AssistantSettings
 import com.quantum.assistant.data.MemoryMode
 import com.quantum.assistant.data.SettingsRepository
@@ -49,6 +57,15 @@ import java.util.Locale
 @Composable
 fun SettingsScreen(repo: SettingsRepository, settings: AssistantSettings, onBack: () -> Unit) {
     val context = LocalContext.current
+    val overlayPrefs = remember { context.getSharedPreferences("quantum_overlay", android.content.Context.MODE_PRIVATE) }
+    var overlayEnabled by remember { mutableStateOf(overlayPrefs.getBoolean("enabled", false)) }
+    val overlayPermission = rememberLauncherForActivityResult(ActivityResultContracts.StartActivityForResult()) {
+        if (Settings.canDrawOverlays(context)) {
+            overlayPrefs.edit().putBoolean("enabled", true).apply()
+            overlayEnabled = true
+            ContextCompat.startForegroundService(context, Intent(context, QuantumOverlayService::class.java).setAction(QuantumOverlayService.ACTION_APP_FOREGROUND))
+        }
+    }
     val device = remember { DeviceSnapshotReader.read(context) }
     val assessment = remember(device) { ThresholdCapabilityAssessor().assess(device) }
 
@@ -111,6 +128,60 @@ fun SettingsScreen(repo: SettingsRepository, settings: AssistantSettings, onBack
                 "RAM: ${device.totalRamMb} MB · Android API ${device.sdkInt}. Уровни пока являются профилями выбора: модели не установлены.",
                 style = MaterialTheme.typography.bodySmall, color = QuantumColors.TextMuted
             )
+        }
+
+
+        SettingsGroup("ПЛАВАЮЩИЙ ОСТРОВ") {
+            Text(
+                "Показывается поверх других приложений. Внутри Quantum используется встроенная панель; при переходе в другое приложение остров уменьшается и становится полупрозрачным.",
+                style = MaterialTheme.typography.bodySmall, color = QuantumColors.TextMuted
+            )
+            Text(
+                "Микрофон не включается автоматически. Нажатие на плавающий остров возвращает Quantum на экран; запись запускается отдельным нажатием на микрофон.",
+                style = MaterialTheme.typography.bodySmall, color = QuantumColors.Porcelain
+            )
+            if (overlayEnabled) {
+                Text("Системный остров включён", color = QuantumColors.Success, style = MaterialTheme.typography.labelLarge)
+                Button(onClick = {
+                    context.stopService(Intent(context, QuantumOverlayService::class.java))
+                    overlayPrefs.edit().putBoolean("enabled", false).apply()
+                    overlayEnabled = false
+                }, modifier = Modifier.fillMaxWidth()) { Text("Выключить остров") }
+            } else {
+                Button(onClick = {
+                    if (Settings.canDrawOverlays(context)) {
+                        overlayPrefs.edit().putBoolean("enabled", true).apply()
+                        overlayEnabled = true
+                        ContextCompat.startForegroundService(context, Intent(context, QuantumOverlayService::class.java).setAction(QuantumOverlayService.ACTION_APP_FOREGROUND))
+                    } else {
+                        overlayPermission.launch(Intent(Settings.ACTION_MANAGE_OVERLAY_PERMISSION, Uri.parse("package:${context.packageName}")))
+                    }
+                }, modifier = Modifier.fillMaxWidth()) { Text("Включить плавающий остров") }
+            }
+        }
+
+
+        SettingsGroup("ПЛАВАЮЩИЙ ОСТРОВ") {
+            Text("Показывается поверх других приложений. Внутри Quantum используется встроенная панель; при переходе в другое приложение остров уменьшается и становится полупрозрачным.", style = MaterialTheme.typography.bodySmall, color = QuantumColors.TextMuted)
+            Text("Микрофон не включается автоматически. Нажатие на плавающий остров возвращает Quantum на экран; запись запускается отдельным нажатием на микрофон.", style = MaterialTheme.typography.bodySmall, color = QuantumColors.Porcelain)
+            if (overlayEnabled) {
+                Text("Системный остров включён", color = QuantumColors.Success, style = MaterialTheme.typography.labelLarge)
+                Button(onClick = {
+                    context.stopService(Intent(context, QuantumOverlayService::class.java))
+                    overlayPrefs.edit().putBoolean("enabled", false).apply()
+                    overlayEnabled = false
+                }, modifier = Modifier.fillMaxWidth()) { Text("Выключить остров") }
+            } else {
+                Button(onClick = {
+                    if (Settings.canDrawOverlays(context)) {
+                        overlayPrefs.edit().putBoolean("enabled", true).apply()
+                        overlayEnabled = true
+                        ContextCompat.startForegroundService(context, Intent(context, QuantumOverlayService::class.java).setAction(QuantumOverlayService.ACTION_APP_FOREGROUND))
+                    } else {
+                        overlayPermission.launch(Intent(Settings.ACTION_MANAGE_OVERLAY_PERMISSION, Uri.parse("package:${context.packageName}")))
+                    }
+                }, modifier = Modifier.fillMaxWidth()) { Text("Включить плавающий остров") }
+            }
         }
 
         SettingsGroup("КОНФИДЕНЦИАЛЬНОСТЬ") {

@@ -1,25 +1,42 @@
 package com.quantum.assistant.ui
 
+import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.RepeatMode
+import androidx.compose.animation.core.animateFloat
+import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.rememberInfiniteTransition
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Canvas
-import androidx.compose.ui.Modifier
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.drawscope.Stroke
 import com.quantum.assistant.ui.theme.QuantumColors
 
-/** Geometric concentric Quantum mark. Drawn natively for crisp adaptive sizing. */
+/** Concentric Quantum mark with a restrained breathing halo during active states. */
 @Composable
 fun QuantumStar(modifier: Modifier = Modifier, glow: Boolean = false) {
+    val transition = rememberInfiniteTransition(label = "quantum-mark")
+    val haloAlpha by transition.animateFloat(
+        initialValue = if (glow) .16f else .10f,
+        targetValue = if (glow) .34f else .10f,
+        animationSpec = if (glow) infiniteRepeatable(
+            animation = tween(1450, easing = FastOutSlowInEasing),
+            repeatMode = RepeatMode.Reverse
+        ) else tween(0),
+        label = "halo-alpha"
+    )
     Canvas(modifier) {
         val c = center
         val r = size.minDimension * .46f
-        if (glow) drawCircle(
+        drawCircle(
             brush = Brush.radialGradient(
-                listOf(QuantumColors.Accent.copy(alpha = .22f), Color.Transparent),
-                center = c, radius = r * 1.55f
-            ), radius = r * 1.55f, center = c
+                listOf(QuantumColors.Accent.copy(alpha = haloAlpha), Color.Transparent),
+                center = c, radius = r * 1.65f
+            ), radius = r * 1.65f, center = c
         )
         drawCircle(QuantumColors.Porcelain, r, c)
         drawCircle(
