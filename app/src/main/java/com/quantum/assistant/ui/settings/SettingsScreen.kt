@@ -1,6 +1,6 @@
 package com.quantum.assistant.ui.settings
 
-import android.content.Intent
+import android.app.Activity\nimport android.content.Intent
 import android.net.Uri
 import android.provider.Settings
 import androidx.compose.foundation.background
@@ -36,7 +36,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import com.quantum.assistant.BuildConfig
+import com.quantum.assistant.BuildConfig\nimport com.quantum.assistant.overlay.QuantumOverlayService
 import com.quantum.assistant.data.AssistantSettings
 import com.quantum.assistant.data.MemoryMode
 import com.quantum.assistant.data.SettingsRepository
@@ -113,7 +113,36 @@ fun SettingsScreen(repo: SettingsRepository, settings: AssistantSettings, onBack
             )
         }
 
-        SettingsGroup("КОНФИДЕНЦИАЛЬНОСТЬ") {
+
+        SettingsGroup("ПЛАВАЮЩИЙ ОСТРОВ") {
+            Text(
+                "Показывается поверх других приложений. Внутри Quantum используется встроенная панель; при переходе в другое приложение остров уменьшается и становится полупрозрачным.",
+                style = MaterialTheme.typography.bodySmall, color = QuantumColors.TextMuted
+            )
+            Text(
+                "Микрофон не включается автоматически. Нажатие на плавающий остров возвращает Quantum на экран; запись запускается отдельным нажатием на микрофон.",
+                style = MaterialTheme.typography.bodySmall, color = QuantumColors.Porcelain
+            )
+            if (overlayEnabled) {
+                Text("Системный остров включён", color = QuantumColors.Success, style = MaterialTheme.typography.labelLarge)
+                Button(onClick = {
+                    context.stopService(Intent(context, QuantumOverlayService::class.java))
+                    overlayPrefs.edit().putBoolean("enabled", false).apply()
+                    overlayEnabled = false
+                }, modifier = Modifier.fillMaxWidth()) { Text("Выключить остров") }
+            } else {
+                Button(onClick = {
+                    if (Settings.canDrawOverlays(context)) {
+                        overlayPrefs.edit().putBoolean("enabled", true).apply()
+                        overlayEnabled = true
+                        ContextCompat.startForegroundService(context, Intent(context, QuantumOverlayService::class.java).setAction(QuantumOverlayService.ACTION_APP_BACKGROUND))
+                    } else {
+                        overlayPermission.launch(Intent(Settings.ACTION_MANAGE_OVERLAY_PERMISSION, Uri.parse("package:${context.packageName}")))
+                    }
+                }, modifier = Modifier.fillMaxWidth()) { Text("Включить плавающий остров") }
+            }
+        }
+\n        SettingsGroup("КОНФИДЕНЦИАЛЬНОСТЬ") {
             Text("Микрофон не работает в фоне. Разрешение запрашивается только при нажатии на кнопку микрофона.", style = MaterialTheme.typography.bodyMedium, color = QuantumColors.Porcelain)
             Text(
                 "Управление разрешениями Android",
