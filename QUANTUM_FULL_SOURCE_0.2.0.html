@@ -2509,4 +2509,190 @@ eval "set -- $(
     )" '"$@"'
 
 exec "$JAVACMD" "$@"
+</code></pre></details><details class="file"><summary>.github/workflows/android-build.yml</summary><pre><code>name: Android build and tests
+
+on:
+  push:
+    branches: [main, alpha-0.1.1-build-repair, design/quantum-ios-inspired, alpha-0.2-microphone-onboarding]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: quantum-android-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    env:
+      ANDROID_HOME: /usr/local/lib/android/sdk
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - name: Install Android SDK packages
+        shell: bash
+        run: |
+          SDKMANAGER="$(find "$ANDROID_HOME/cmdline-tools" -type f -name sdkmanager | sort | tail -n 1)"
+          test -x "$SDKMANAGER"
+          yes | "$SDKMANAGER" --sdk_root="$ANDROID_HOME" --licenses &gt;/dev/null || true
+          "$SDKMANAGER" --sdk_root="$ANDROID_HOME" 'platforms;android-35' 'build-tools;35.0.0' 'platform-tools'
+      - name: Install Gradle 8.10.2 for official wrapper bootstrap
+        uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.10.2'
+      - name: Generate official Gradle Wrapper if missing
+        shell: bash
+        run: |
+          if [ ! -s gradle/wrapper/gradle-wrapper.jar ]; then
+            gradle wrapper --gradle-version 8.10.2 --distribution-type bin
+          fi
+          test -s gradle/wrapper/gradle-wrapper.jar
+          grep -q 'gradle-8.10.2-bin.zip' gradle/wrapper/gradle-wrapper.properties
+      - name: Commit official wrapper files
+        if: github.event_name != 'pull_request'
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add gradlew gradlew.bat gradle/wrapper/gradle-wrapper.jar gradle/wrapper/gradle-wrapper.properties
+          if ! git diff --cached --quiet; then
+            git commit -m 'Build: add official Gradle 8.10.2 wrapper'
+            git push
+          fi
+      - name: Verify wrapper version
+        run: ./gradlew --version
+      - name: Run unit tests
+        run: ./gradlew --no-daemon clean testDebugUnitTest
+      - name: Build debug APK
+        run: ./gradlew --no-daemon assembleDebug
+      - name: Verify APK output
+        shell: bash
+        run: |
+          APK='app/build/outputs/apk/debug/app-debug.apk'
+          test -s "$APK"
+          ls -lh "$APK"
+          sha256sum "$APK"
+      - name: Upload debug APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: Quantum-Alpha-0.2.0-debug-apk
+          path: app/build/outputs/apk/debug/app-debug.apk
+          if-no-files-found: error
+          retention-days: 30
 </code></pre></details>
+<details class="file"><summary>.gitignore</summary><pre><code>build/
+.gradle/
+local.properties
+.idea/
+*.iml
+</code></pre></details>
+<details class="file"><summary>gradlew.bat</summary><pre><code>@rem
+@rem Copyright 2015 the original author or authors.
+@rem
+@rem Licensed under the Apache License, Version 2.0 (the "License");
+@rem you may not use this file except in compliance with the License.
+@rem You may obtain a copy of the License at
+@rem
+@rem      https://www.apache.org/licenses/LICENSE-2.0
+@rem
+@rem Unless required by applicable law or agreed to in writing, software
+@rem distributed under the License is distributed on an "AS IS" BASIS,
+@rem WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+@rem See the License for the specific language governing permissions and
+@rem limitations under the License.
+@rem
+@rem SPDX-License-Identifier: Apache-2.0
+@rem
+
+@if "%DEBUG%"=="" @echo off
+@rem ##########################################################################
+@rem
+@rem  Gradle startup script for Windows
+@rem
+@rem ##########################################################################
+
+@rem Set local scope for the variables with windows NT shell
+if "%OS%"=="Windows_NT" setlocal
+
+set DIRNAME=%~dp0
+if "%DIRNAME%"=="" set DIRNAME=.
+@rem This is normally unused
+set APP_BASE_NAME=%~n0
+set APP_HOME=%DIRNAME%
+
+@rem Resolve any "." and ".." in APP_HOME to make it shorter.
+for %%i in ("%APP_HOME%") do set APP_HOME=%%~fi
+
+@rem Add default JVM options here. You can also use JAVA_OPTS and GRADLE_OPTS to pass JVM options to this script.
+set DEFAULT_JVM_OPTS="-Xmx64m" "-Xms64m"
+
+@rem Find java.exe
+if defined JAVA_HOME goto findJavaFromJavaHome
+
+set JAVA_EXE=java.exe
+%JAVA_EXE% -version &gt;NUL 2&gt;&amp;1
+if %ERRORLEVEL% equ 0 goto execute
+
+echo. 1&gt;&amp;2
+echo ERROR: JAVA_HOME is not set and no 'java' command could be found in your PATH. 1&gt;&amp;2
+echo. 1&gt;&amp;2
+echo Please set the JAVA_HOME variable in your environment to match the 1&gt;&amp;2
+echo location of your Java installation. 1&gt;&amp;2
+
+goto fail
+
+:findJavaFromJavaHome
+set JAVA_HOME=%JAVA_HOME:"=%
+set JAVA_EXE=%JAVA_HOME%/bin/java.exe
+
+if exist "%JAVA_EXE%" goto execute
+
+echo. 1&gt;&amp;2
+echo ERROR: JAVA_HOME is set to an invalid directory: %JAVA_HOME% 1&gt;&amp;2
+echo. 1&gt;&amp;2
+echo Please set the JAVA_HOME variable in your environment to match the 1&gt;&amp;2
+echo location of your Java installation. 1&gt;&amp;2
+
+goto fail
+
+:execute
+@rem Setup the command line
+
+set CLASSPATH=%APP_HOME%\gradle\wrapper\gradle-wrapper.jar
+
+
+@rem Execute Gradle
+"%JAVA_EXE%" %DEFAULT_JVM_OPTS% %JAVA_OPTS% %GRADLE_OPTS% "-Dorg.gradle.appname=%APP_BASE_NAME%" -classpath "%CLASSPATH%" org.gradle.wrapper.GradleWrapperMain %*
+
+:end
+@rem End local scope for the variables with windows NT shell
+if %ERRORLEVEL% equ 0 goto mainEnd
+
+:fail
+rem Set variable GRADLE_EXIT_CONSOLE if you need the _script_ return code instead of
+rem the _cmd.exe /c_ return code!
+set EXIT_CODE=%ERRORLEVEL%
+if %EXIT_CODE% equ 0 set EXIT_CODE=1
+if not ""=="%GRADLE_EXIT_CONSOLE%" exit %EXIT_CODE%
+exit /b %EXIT_CODE%
+
+:mainEnd
+if "%OS%"=="Windows_NT" endlocal
+
+:omega
+</code></pre></details>
+<h2>Binary project asset</h2>
+<div class="notice"><b>gradle/wrapper/gradle-wrapper.jar</b> is a binary file and is not embedded as readable source. It is present in the original repository: <a href="https://github.com/nistratovmatvej-crypto/Quantum-/blob/main/gradle/wrapper/gradle-wrapper.jar">view/download wrapper JAR</a>. The HTML includes gradlew, gradlew.bat and gradle-wrapper.properties.</div>
+<h2>Original repository</h2><p><a href="https://github.com/nistratovmatvej-crypto/Quantum-">Quantum GitHub repository</a></p>
+<p class="muted">Exported from the repository's main branch. The older QUANTUM_SOURCE_0.2.0.html diff file is intentionally not embedded as source.</p>
+</main></body></html>
