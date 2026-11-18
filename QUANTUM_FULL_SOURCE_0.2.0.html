@@ -1663,4 +1663,850 @@ fun QuantumTheme(content: @Composable () -&gt; Unit) {
         &lt;item name="android:navigationBarColor"&gt;@android:color/transparent&lt;/item&gt;
     &lt;/style&gt;
 &lt;/resources&gt;
+</code></pre></details><details class="file"><summary>app/src/test/java/com/quantum/assistant/data/SettingsRepositoryTest.kt</summary><pre><code>package com.quantum.assistant.data
+
+import com.quantum.assistant.device.LocalTier
+import org.junit.Assert.assertEquals
+import org.junit.Assert.assertNull
+import org.junit.Test
+
+class MapStore(val map: MutableMap&lt;String, String&gt; = mutableMapOf()) : KeyValueStore {
+    override fun getString(key: String) = map[key]
+    override fun putString(key: String, value: String) { map[key] = value }
+}
+
+class SettingsRepositoryTest {
+    @Test fun defaultsWhenEmpty() {
+        val s = SettingsRepository(MapStore()).settings.value
+        assertEquals("Quantum", s.displayName); assertEquals(1.0f, s.speechSpeed); assertEquals(MemoryMode.OFF, s.memoryMode); assertNull(s.selectedTier)
+    }
+
+    @Test fun valuesSurviveRecreation() {
+        val store = MapStore()
+        SettingsRepository(store).apply {
+            setAssistantName("Orion"); setSpeechSpeed(1.5f); setMemoryMode(MemoryMode.FULL); setSelectedTier(LocalTier.COMET)
+        }
+        val s = SettingsRepository(store).settings.value // simulates app restart
+        assertEquals("Orion", s.assistantName); assertEquals(1.5f, s.speechSpeed)
+        assertEquals(MemoryMode.FULL, s.memoryMode); assertEquals(LocalTier.COMET, s.selectedTier)
+    }
+
+    @Test fun selectedTierCanBeClearedAndPersists() {
+        val store = MapStore()
+        SettingsRepository(store).apply { setSelectedTier(LocalTier.NOVA); setSelectedTier(null) }
+        assertNull(SettingsRepository(store).settings.value.selectedTier)
+    }
+
+    @Test fun flowReflectsChanges() {
+        val repo = SettingsRepository(MapStore())
+        repo.setAssistantName("Nova")
+        assertEquals("Nova", repo.settings.value.displayName)
+    }
+
+    @Test fun blankNameFallsBackToDefaultForDisplay() {
+        val repo = SettingsRepository(MapStore()); repo.setAssistantName("   ")
+        assertEquals("Quantum", repo.settings.value.displayName)
+    }
+
+    @Test fun speedAndNameAreClamped() {
+        val repo = SettingsRepository(MapStore())
+        repo.setSpeechSpeed(9f); assertEquals(2.0f, repo.settings.value.speechSpeed)
+        repo.setAssistantName("x".repeat(100)); assertEquals(30, repo.settings.value.assistantName.length)
+    }
+
+    @Test fun corruptStoredValuesFallBackToDefaults() {
+        val s = SettingsRepository(MapStore(mutableMapOf("speech_speed" to "abc", "memory_mode" to "???", "selected_tier" to "X"))).settings.value
+        assertEquals(1.0f, s.speechSpeed); assertEquals(MemoryMode.OFF, s.memoryMode); assertNull(s.selectedTier)
+    }
+}
+</code></pre></details>
+<details class="file"><summary>app/src/test/java/com/quantum/assistant/device/ThresholdCapabilityAssessorTest.kt</summary><pre><code>package com.quantum.assistant.device
+
+import org.junit.Assert.assertEquals
+import org.junit.Assert.assertNull
+import org.junit.Assert.assertTrue
+import org.junit.Test
+
+class ThresholdCapabilityAssessorTest {
+    private val assessor = ThresholdCapabilityAssessor()
+    private fun input(total: Long, avail: Long = total / 2, abis: List&lt;String&gt; = listOf("arm64-v8a"),
+                      thermal: Int? = 0, battery: Int? = 80, saver: Boolean? = false) =
+        CapabilityInput(total, avail, 34, abis, thermal, battery, saver)
+    private fun CapabilityAssessment.verdict(t: LocalTier) = tiers.first { it.tier == t }.verdict
+
+    @Test fun lowRamRecommendsMeteorOnly() {
+        val a = assessor.assess(input(3_000))
+        assertEquals(Verdict.MEETS, a.verdict(LocalTier.METEOR)); assertEquals(Verdict.BELOW, a.verdict(LocalTier.COMET))
+        assertEquals(LocalTier.METEOR, a.recommended)
+    }
+
+    @Test fun midRamRecommendsComet() = assertEquals(LocalTier.COMET, assessor.assess(input(6_000)).recommended)
+
+    @Test fun highRamRecommendsNova() = assertEquals(LocalTier.NOVA, assessor.assess(input(12_000)).recommended)
+
+    @Test fun veryLowRamRecommendsNothing() {
+        val a = assessor.assess(input(1_500))
+        assertNull(a.recommended); assertTrue(a.tiers.all { it.verdict == Verdict.BELOW })
+    }
+
+    @Test fun thirtyTwoBitCannotRunCometOrNova() {
+        val a = assessor.assess(input(12_000, abis = listOf("armeabi-v7a")))
+        assertEquals(Verdict.BELOW, a.verdict(LocalTier.COMET)); assertEquals(Verdict.BELOW, a.verdict(LocalTier.NOVA))
+        assertEquals(LocalTier.METEOR, a.recommended)
+    }
+
+    @Test fun lowFreeRamIsMarginalNotBelow() {
+        val a = assessor.assess(input(12_000, avail = 500))
+        assertEquals(Verdict.MARGINAL, a.verdict(LocalTier.NOVA))
+        assertEquals(LocalTier.METEOR, a.recommended) // every tier is marginal, so the lightest is advised
+    }
+
+    @Test fun severeThermalDowngradesToMarginal() {
+        val a = assessor.assess(input(12_000, thermal = 3))
+        assertEquals(Verdict.MARGINAL, a.verdict(LocalTier.NOVA)); assertTrue(a.tiers.first().reasons.any { it.contains("hot") })
+    }
+
+    @Test fun batterySaverAndLowBatteryDowngrade() {
+        assertEquals(Verdict.MARGINAL, assessor.assess(input(12_000, saver = true)).verdict(LocalTier.COMET))
+        assertEquals(Verdict.MARGINAL, assessor.assess(input(12_000, battery = 10)).verdict(LocalTier.COMET))
+    }
+
+    @Test fun unreadableSignalsAreReportedAsNotMeasured() {
+        val a = assessor.assess(input(6_000, thermal = null, battery = null, saver = null))
+        assertTrue(a.notMeasured.any { it.startsWith("Thermal") }); assertTrue(a.notMeasured.any { it.startsWith("Battery level") })
+        assertTrue(a.notMeasured.contains("GPU / NPU capability")) // never claimed as measured
+        assertEquals(Verdict.MEETS, a.verdict(LocalTier.COMET)) // unknown signals do not penalize
+    }
+}
+</code></pre></details>
+<details class="file"><summary>app/src/test/java/com/quantum/assistant/floating/PanelControllerTest.kt</summary><pre><code>package com.quantum.assistant.floating
+
+import com.quantum.assistant.audio.MicAvailability
+import com.quantum.assistant.audio.MicListener
+import com.quantum.assistant.audio.MicSession
+import com.quantum.assistant.audio.MicStartResult
+import com.quantum.assistant.audio.NoOpMicSession
+import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.test.TestScope
+import kotlinx.coroutines.test.advanceTimeBy
+import kotlinx.coroutines.test.runCurrent
+import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
+import org.junit.Assert.assertNull
+import org.junit.Assert.assertTrue
+import org.junit.Test
+
+class FakeMic(
+    override val availability: MicAvailability = MicAvailability.Available,
+    override val reportsSpeechActivity: Boolean = true,
+    private val failOnStart: String? = null
+) : MicSession {
+    var running = false
+    var startCount = 0
+    var listener: MicListener? = null
+    override fun start(listener: MicListener): MicStartResult {
+        startCount++
+        failOnStart?.let { return MicStartResult.Failed(it) }
+        running = true; this.listener = listener; return MicStartResult.Started
+    }
+    override fun stop() { running = false }
+}
+
+@OptIn(ExperimentalCoroutinesApi::class)
+class PanelControllerTest {
+    private enum class Ev(val fire: (PanelController) -&gt; Boolean) {
+        STAR({ it.onStarTap() }), MIC({ it.onMicTap() }), STOP({ it.onStopListening() }),
+        TRANSCRIPT({ it.onTranscriptFinalized() }), PROPOSE({ it.onActionProposed() }),
+        READY_SPEAK({ it.onResponseReady(true) }), READY_QUIET({ it.onResponseReady(false) }),
+        APPROVE_SPEAK({ it.onApprove(true) }), APPROVE_QUIET({ it.onApprove(false) }), REJECT({ it.onReject() }),
+        SPEAK_DONE({ it.onSpeakingFinished() }), FAIL({ it.onFailure("boom") }), DISMISS({ it.onDismissError() }), CLOSE({ it.onClose() })
+    }
+
+    private val valid: Map&lt;Pair&lt;PanelState, Ev&gt;, PanelState&gt; = mapOf(
+        (PanelState.COLLAPSED to Ev.STAR) to PanelState.EXPANDED_IDLE,
+        (PanelState.EXPANDED_IDLE to Ev.MIC) to PanelState.LISTENING,
+        (PanelState.LISTENING to Ev.STOP) to PanelState.EXPANDED_IDLE,
+        (PanelState.LISTENING to Ev.TRANSCRIPT) to PanelState.PROCESSING,
+        (PanelState.PROCESSING to Ev.PROPOSE) to PanelState.AWAITING_CONFIRMATION,
+        (PanelState.PROCESSING to Ev.READY_SPEAK) to PanelState.SPEAKING,
+        (PanelState.PROCESSING to Ev.READY_QUIET) to PanelState.EXPANDED_IDLE,
+        (PanelState.AWAITING_CONFIRMATION to Ev.APPROVE_SPEAK) to PanelState.SPEAKING,
+        (PanelState.AWAITING_CONFIRMATION to Ev.APPROVE_QUIET) to PanelState.EXPANDED_IDLE,
+        (PanelState.AWAITING_CONFIRMATION to Ev.REJECT) to PanelState.EXPANDED_IDLE,
+        (PanelState.SPEAKING to Ev.SPEAK_DONE) to PanelState.EXPANDED_IDLE,
+        (PanelState.ERROR to Ev.DISMISS) to PanelState.EXPANDED_IDLE
+    ) + listOf(PanelState.EXPANDED_IDLE, PanelState.LISTENING, PanelState.PROCESSING,
+        PanelState.AWAITING_CONFIRMATION, PanelState.SPEAKING, PanelState.ERROR).map { (it to Ev.CLOSE) to PanelState.COLLAPSED } +
+        listOf(PanelState.EXPANDED_IDLE, PanelState.LISTENING, PanelState.PROCESSING,
+            PanelState.AWAITING_CONFIRMATION, PanelState.SPEAKING).map { (it to Ev.FAIL) to PanelState.ERROR }
+
+    private fun controller(scope: TestScope, mic: MicSession = FakeMic()) = PanelController(scope, mic)
+
+    private fun PanelController.drive(target: PanelState): PanelController {
+        when (target) {
+            PanelState.COLLAPSED -&gt; Unit
+            PanelState.EXPANDED_IDLE -&gt; onStarTap()
+            PanelState.LISTENING -&gt; { onStarTap(); onMicTap() }
+            PanelState.PROCESSING -&gt; { drive(PanelState.LISTENING); onTranscriptFinalized() }
+            PanelState.AWAITING_CONFIRMATION -&gt; { drive(PanelState.PROCESSING); onActionProposed() }
+            PanelState.SPEAKING -&gt; { drive(PanelState.PROCESSING); onResponseReady(true) }
+            PanelState.ERROR -&gt; { drive(PanelState.EXPANDED_IDLE); onFailure("boom") }
+        }
+        assertEquals(target, state.value)
+        return this
+    }
+
+    @Test fun everyStateEventPairBehavesAsTableSays() {
+        for (from in PanelState.values()) for (ev in Ev.values()) {
+            val c = controller(TestScope()).drive(from)
+            val expected = valid[from to ev]
+            val accepted = ev.fire(c)
+            assertEquals("$from + $ev accepted?", expected != null, accepted)
+            assertEquals("$from + $ev", expected ?: from, c.state.value)
+        }
+    }
+
+    @Test fun firstTapExpandsWithMicOff() {
+        val mic = FakeMic(); val c = controller(TestScope(), mic)
+        c.onStarTap()
+        assertEquals(PanelState.EXPANDED_IDLE, c.state.value)
+        assertEquals(0, mic.startCount); assertFalse(mic.running)
+    }
+
+    @Test fun micStartsOnlyOnSecondTap() {
+        val mic = FakeMic(); val c = controller(TestScope(), mic)
+        assertFalse(c.onMicTap()); assertEquals(0, mic.startCount)
+        c.onStarTap(); c.onMicTap()
+        assertEquals(1, mic.startCount); assertTrue(mic.running)
+    }
+
+    @Test fun manualStopStopsMicAndReturnsToIdle() {
+        val mic = FakeMic(); val c = controller(TestScope(), mic).drive(PanelState.LISTENING)
+        c.onStopListening()
+        assertEquals(PanelState.EXPANDED_IDLE, c.state.value); assertFalse(mic.running)
+    }
+
+    @Test fun closeCollapsesAndStopsMicFromEveryActiveState() {
+        for (s in PanelState.values().filter { it != PanelState.COLLAPSED }) {
+            val mic = FakeMic(); val c = controller(TestScope(), mic).drive(s)
+            c.onClose()
+            assertEquals(s.name, PanelState.COLLAPSED, c.state.value); assertFalse(s.name, mic.running)
+        }
+    }
+
+    @Test fun unavailableMicrophoneDoesNotPretendToListen() {
+        val c = PanelController(TestScope(), NoOpMicSession).drive(PanelState.EXPANDED_IDLE)
+        c.onMicTap()
+        assertEquals(PanelState.ERROR, c.state.value)
+        assertFalse(c.isCaptureLive)
+    }
+
+    @Test fun speechActivityResetsTimeout() {
+        val scope = TestScope(); val mic = FakeMic(); val c = PanelController(scope, mic).drive(PanelState.LISTENING)
+        assertTrue(c.timeoutIsSilenceDetection)
+        scope.runCurrent(); scope.advanceTimeBy(10_000)
+        mic.listener!!.onSpeechDetected(); scope.runCurrent()
+        scope.advanceTimeBy(10_000); scope.runCurrent()
+        assertEquals(PanelState.LISTENING, c.state.value)
+        scope.advanceTimeBy(6_000); scope.runCurrent()
+        assertEquals(PanelState.COLLAPSED, c.state.value); assertFalse(mic.running)
+    }
+
+    @Test fun liveMicWithoutSpeechDetectionNeverTimesOut() {
+        val scope = TestScope()
+        val mic = object : MicSession {
+            override val availability = MicAvailability.Available
+            override val reportsSpeechActivity = false
+            override fun start(listener: MicListener) = MicStartResult.Started
+            override fun stop() = Unit
+        }
+        val c = controller(scope, mic).drive(PanelState.LISTENING)
+        assertFalse(c.timeoutIsSilenceDetection)
+        scope.advanceTimeBy(60_000); scope.runCurrent()
+        assertEquals(PanelState.LISTENING, c.state.value)
+    }
+
+    @Test fun reEnteringListeningDoesNotStackTimers() {
+        val scope = TestScope(); val mic = FakeMic()
+        val c = PanelController(scope, mic).drive(PanelState.LISTENING)
+        scope.runCurrent(); scope.advanceTimeBy(5_000); scope.runCurrent()
+        c.onStopListening(); c.onMicTap(); scope.runCurrent()
+        scope.advanceTimeBy(14_500); scope.runCurrent()
+        assertEquals(PanelState.LISTENING, c.state.value)
+        scope.advanceTimeBy(1_000); scope.runCurrent()
+        assertEquals(PanelState.COLLAPSED, c.state.value)
+    }
+
+    @Test fun micStartFailureGoesToErrorWithMessage() {
+        val c = controller(TestScope(), FakeMic(failOnStart = "denied")).drive(PanelState.EXPANDED_IDLE)
+        c.onMicTap()
+        assertEquals(PanelState.ERROR, c.state.value); assertEquals("denied", c.errorMessage.value)
+        c.onDismissError()
+        assertEquals(PanelState.EXPANDED_IDLE, c.state.value); assertNull(c.errorMessage.value)
+    }
+
+    @Test fun thrownMicStartExceptionBecomesErrorState() {
+        val mic = object : MicSession {
+            override val availability = MicAvailability.Available
+            override val reportsSpeechActivity = true
+            override fun start(listener: MicListener): MicStartResult = error("permission bridge crashed")
+            override fun stop() = Unit
+        }
+        val c = controller(TestScope(), mic).drive(PanelState.EXPANDED_IDLE)
+        assertTrue(c.onMicTap())
+        assertEquals(PanelState.ERROR, c.state.value)
+        assertEquals("permission bridge crashed", c.errorMessage.value)
+    }
+
+    @Test fun micErrorWhileListeningGoesToError() {
+        val mic = FakeMic(); val c = controller(TestScope(), mic).drive(PanelState.LISTENING)
+        mic.listener!!.onError("interrupted")
+        assertEquals(PanelState.ERROR, c.state.value); assertFalse(mic.running)
+    }
+
+    @Test fun transcriptFromMicMovesToProcessingAndIsKept() {
+        val mic = FakeMic(); val c = controller(TestScope(), mic).drive(PanelState.LISTENING)
+        mic.listener!!.onTranscript("Привет, Quantum")
+        assertEquals(PanelState.EXPANDED_IDLE, c.state.value); assertFalse(mic.running)
+        assertEquals("Привет, Quantum", c.transcript.value)
+    }
+
+    @Test fun noOpMicReportsUnavailable() {
+        assertTrue(NoOpMicSession.availability is MicAvailability.Unavailable)
+        assertFalse(NoOpMicSession.reportsSpeechActivity)
+    }
+}
+</code></pre></details>
+<details class="file"><summary>docs/ARCHITECTURE.md</summary><pre><code># Quantum — Technical Architecture
+
+**Version:** Quantum Alpha 0.1  
+**Status:** Proposed architecture; implementation decisions must be validated with Android prototypes.
+
+## High-level modules
+
+- app/ — application shell, navigation, lifecycle, dependency wiring.
+- ui/ — Compose screens, design system, accessibility.
+- floating/ — overlay button, expanded panel, animation and state machine.
+- audio/ — microphone session, audio focus, speech activity/silence detection.
+- speech/ — speech-to-text and text-to-speech adapters.
+- assistant/ — conversation orchestration, intent interpretation, tool routing.
+- ai/cloud/ — provider abstraction and cloud adapters.
+- ai/local/ — local inference abstraction and model lifecycle.
+- devicecontrol/ — allowlisted Android actions and confirmation workflow.
+- memory/ — conversation history and optional long-term memory.
+- voices/ — voice catalog, licensing metadata, downloads and queue.
+- billing/ — Google Play Billing integration for Supernova.
+- data/ — persistence, settings, secure storage and repositories.
+
+## Core request flow
+
+1. User taps the floating star to expand the panel.
+2. User taps the panel microphone control.
+3. Audio session requests/uses the required Android microphone permission and foreground execution where required.
+4. Speech recognition produces a transcript.
+5. Assistant orchestrator classifies the request: conversational response, cloud reasoning, local/offline command, or device action.
+6. Device actions are converted into typed, allowlisted action proposals.
+7. UI presents the exact action and asks for confirmation.
+8. Only after confirmation does the action executor invoke the relevant Android API or supported intent.
+9. Result is reported to the user and optionally added to conversation history according to memory settings.
+
+## Floating panel state machine
+
+States:
+- COLLAPSED
+- EXPANDED_IDLE
+- LISTENING
+- PROCESSING
+- AWAITING_CONFIRMATION
+- SPEAKING
+- ERROR
+
+Transitions:
+- COLLAPSED + star tap -&gt; EXPANDED_IDLE
+- EXPANDED_IDLE + mic tap -&gt; LISTENING
+- LISTENING + transcript finalized -&gt; PROCESSING
+- LISTENING + 15 seconds silence -&gt; stop capture -&gt; COLLAPSED
+- PROCESSING + action proposal -&gt; AWAITING_CONFIRMATION
+- AWAITING_CONFIRMATION + approve -&gt; execute -&gt; SPEAKING or EXPANDED_IDLE
+- AWAITING_CONFIRMATION + reject -&gt; EXPANDED_IDLE
+- Any active state + explicit close -&gt; stop audio safely -&gt; COLLAPSED
+
+The silence timer must reset when speech is detected. It must not cut off a user who is still speaking. The UI must expose a manual stop control.
+
+## Android constraints
+
+- Use Kotlin and Jetpack Compose for the native UI.
+- Use Android-supported overlay and foreground-service patterns; do not assume an overlay can run invisibly or indefinitely.
+- Request only necessary permissions, at the point of use.
+- Do not use Accessibility Service as a blanket substitute for public Android APIs. If a feature genuinely requires accessibility, explain its purpose and obtain explicit user opt-in in system settings.
+- Prefer public intents and supported APIs. Some system settings cannot be toggled directly by third-party apps.
+- Respect Android background execution, microphone, notification, and foreground-service restrictions.
+
+## Model runtime
+
+Create a provider/runtime interface so Meteor, Comet, and Nova are selectable implementations rather than hard-coded UI labels.
+
+Device recommendation should consider total and currently available memory, Android version and ABI, CPU/GPU/NPU support where available, thermal and battery constraints, model file size, and context requirements.
+
+Model artifacts must be downloaded separately, checksum-verified, versioned, and accompanied by license metadata. Avoid committing large model binaries to Git.
+
+## Cloud provider abstraction
+
+Keep cloud provider credentials out of the Android client. Use a secure backend or a provider design that does not embed privileged API secrets in the APK. Define quotas and usage accounting server-side for free and Pro plans.
+
+## Data and privacy
+
+- Keep short-lived microphone audio in memory where possible; do not save raw recordings by default.
+- Separate conversation history from long-term memory.
+- Provide explicit controls to inspect, export, and delete stored memory/history.
+- Store sensitive tokens using Android Keystore-backed mechanisms.
+- Document what is sent to cloud providers before first use.
+
+## Testing priorities
+
+1. Overlay lifecycle and state transitions.
+2. Microphone permission denial/revocation and interruption handling.
+3. Silence timeout and speech-continuation behavior.
+4. Confirmation gating for every device action.
+5. Offline fallback and cloud-to-local transition.
+6. Model memory pressure and thermal behavior.
+7. Voice download queue recovery and checksum verification.
+8. Billing entitlement validation and restore purchases.
+</code></pre></details>
+<details class="file"><summary>docs/DESIGN_SYSTEM.md</summary><pre><code># Quantum visual identity — Alpha 0.1.2 design direction
+
+## Brand mark
+The supplied concentric-circle symbol is the basis of the Quantum mark. The app uses a native vector/Canvas implementation so it remains sharp at different sizes and does not depend on a remote image.
+
+## Palette
+- Atlantic background: `#071B22`
+- Elevated background: `#0B252E`
+- Main surface: `#102F39`
+- Raised surface: `#173B46`
+- Signature cyan: `#08A8C9`
+- Bright cyan: `#36C9E5`
+- Warm porcelain: `#F4F3EF`
+- Muted text: `#A4BAC0`
+
+## Interface principles
+- Native Material 3 components and Android accessibility semantics.
+- iOS-inspired hierarchy: generous spacing, clear type scale, restrained rounded cards, quiet controls and focused primary content.
+- Do not reproduce Apple's proprietary UI, icons, fonts, or branding.
+- Keep the assistant activation control visible and easy to reach.
+- Do not imply unavailable capabilities are active. Alpha status labels remain explicit.
+- Avoid gratuitous gradients, neon effects, excessive glass blur, and dense dashboards.
+
+## Current scope
+This change updates the theme, home screen, settings screen, in-app mark and adaptive launcher icon. It is a visual refresh only: microphone capture, speech recognition, AI providers, local model inference and device actions remain outside this change.
+</code></pre></details>
+<details class="file"><summary>docs/PRODUCT_SPEC.md</summary><pre><code># Quantum — Product Specification
+
+**Version:** Quantum Alpha 0.1  
+**Status:** Initial product baseline
+
+## Identity
+
+- Product name: Quantum
+- Platform: Android
+- Visual identity: deep navy background, simple white star with a subtle cool gradient and restrained glossy highlight; cyan/blue accents.
+- Default assistant name: Quantum
+- Default voice direction: calm, polished, Jarvis-inspired character; do not imply an official Marvel voice or use an unlicensed actor/character clone.
+- Speech speed: 1.0x
+- Communication style: friendly, concise, honest
+- Language: follow Android device language by default; allow manual override.
+
+## Floating assistant
+
+1. A compact circular button displays the Quantum star.
+2. First tap expands a horizontal floating panel. Microphone remains off.
+3. Second tap inside the expanded panel starts microphone capture.
+4. Speech is transcribed and sent through the assistant pipeline.
+5. After 15 seconds with no detected speech, microphone capture stops and the panel collapses.
+6. The user can manually stop listening or collapse the panel at any time.
+7. The app must clearly indicate microphone state and respect Android foreground-service and overlay restrictions.
+
+The 15-second timeout is a silence timeout, not a hard limit on the length of a spoken request.
+
+## Assistant capabilities
+
+Quantum is a full conversational AI and device assistant. It should understand intent, ask clarifying questions when needed, and use tools/actions when appropriate.
+
+Potential Android actions include launching apps, opening supported settings screens, creating alarms/timers/reminders, and other capabilities permitted by Android APIs and granted permissions.
+
+**Safety rule:** actions that change device state, access private data, send messages, place calls, delete files, or otherwise have meaningful consequences require a clear confirmation step. Permission prompts must be transparent and initiated only when the feature needs them.
+
+## Intelligence modes
+
+- Cloud AI is available to free and Pro users, subject to different usage limits.
+- Local AI supports essential offline commands and lightweight requests.
+- Quantum should preserve conversational context when switching between cloud and local modes where feasible.
+- Network state and local-model availability should be visible to the user.
+
+### Local model tiers
+
+| Tier | Target device class | Intended trade-off |
+|---|---|---|
+| Quantum Meteor | Lower-resource devices | Small footprint and lower memory use; reduced reasoning and context capability |
+| Quantum Comet | Mid-range devices | Balanced speed, memory use, and capability |
+| Quantum Nova | High-end devices | Larger model and stronger local reasoning; higher RAM, storage, and thermal demand |
+
+The app recommends a tier based on measured device capability and available resources, but lets the user choose another compatible tier. Do not promise that a tier will run based only on a chipset name.
+
+## Memory
+
+Four user-selectable modes:
+
+1. Off — do not retain cross-session memory.
+2. Dialogue only — retain conversation history.
+3. Full — retain useful facts and preferences.
+4. Full + configurable — full memory with review, edit, pin, and delete controls.
+
+Recommend a mode based on device/storage capability, but keep memory controls separate from model selection. Memory should be stored independently of model weights and should not require keeping the model resident in RAM.
+
+## Voice library
+
+- 150 free base voices.
+- 300 additional voices for Quantum Supernova Pro.
+- Voices are presented as named character/persona profiles rather than generic labels where legally permitted.
+- Voice language follows the app/device language by default; voice identity and accent are separate selectable properties.
+- Users can preview voices before downloading.
+- Users can select multiple voices and add them to a download queue.
+- Queue supports progress, pause/resume where supported, retry, and cancellation.
+- Voice assets are downloaded on demand, not bundled wholesale.
+
+Only use voice assets with verified redistribution and commercial-use rights appropriate to the app. A voice being publicly downloadable or described as free does not establish that it is copyright-free. Character names, likenesses, and voice imitations may require separate permissions. Provide original or licensed alternatives when rights are unclear.
+
+## Quantum Supernova Pro
+
+- Monthly subscription.
+- Annual purchase/subscription paid upfront at a lower effective monthly price.
+- Same feature entitlement for monthly and annual plans.
+- Higher cloud AI usage limits.
+- 300 additional voice profiles.
+- Further premium features may be added without removing core functionality from free users.
+
+## Default settings
+
+- Name: Quantum
+- Voice: Jarvis-inspired (licensed/original voice only)
+- Speech speed: 1.0x
+- Tone: friendly, concise, honest
+- Language: device language
+- Floating assistant: manual activation only
+- Microphone: off until the user taps the expanded panel
+</code></pre></details>
+<details class="file"><summary>docs/ROADMAP.md</summary><pre><code># Quantum — Development Roadmap
+
+All pre-release milestones use the **Quantum Alpha 0.x** naming sequence.
+
+## Quantum Alpha 0.1 — Foundation
+- [x] Establish product baseline and technical architecture.
+- [x] Define assistant behavior, privacy principles, and visual identity.
+- [ ] Create Android Studio project and Compose design system.
+- [ ] Build static home screen and settings navigation.
+- [ ] Prototype floating star and horizontal panel states.
+
+## Quantum Alpha 0.2 — Voice interaction
+- [ ] Microphone permission and explicit start/stop.
+- [ ] Speech-to-text adapter.
+- [ ] Text-to-speech adapter and playback controls.
+- [ ] 15-second silence timeout.
+- [ ] Conversation UI and interruption handling.
+
+## Quantum Alpha 0.3 — Assistant core
+- [ ] Conversation orchestration.
+- [ ] Cloud provider abstraction.
+- [ ] Local command parser and offline fallback.
+- [ ] Error, timeout, and network-state handling.
+
+## Quantum Alpha 0.4 — Device actions
+- [ ] Typed action registry.
+- [ ] Confirmation UI and action audit trail.
+- [ ] Safe app launching and supported Android intents.
+- [ ] Additional actions only where Android APIs permit them.
+
+## Quantum Alpha 0.5 — Memory
+- [ ] Four memory modes.
+- [ ] History and long-term memory separation.
+- [ ] Review, edit, export, and delete controls.
+
+## Quantum Alpha 0.6 — Voice library
+- [ ] Voice catalog and licensing metadata.
+- [ ] Preview and selection.
+- [ ] Multi-item download queue.
+- [ ] Pause/resume, retry, cancel, integrity checks.
+
+## Quantum Alpha 0.7 — Local model tiers
+- [ ] Runtime abstraction.
+- [ ] Meteor, Comet, Nova model evaluation.
+- [ ] Device capability recommendation.
+- [ ] Offline command coverage and performance tests.
+
+## Quantum Alpha 0.8 — Supernova
+- [ ] Google Play Billing integration.
+- [ ] Monthly and annual plans.
+- [ ] Server-side entitlement and cloud quota handling.
+- [ ] Pro voice catalog access.
+
+## Quantum Alpha 0.9 — Stabilization
+- [ ] Battery, thermal, memory and accessibility testing.
+- [ ] Privacy and permission review.
+- [ ] Crash and lifecycle testing across Android versions.
+- [ ] Release candidate and documentation.
+
+## Global release
+The global release version is assigned only after the Alpha sequence is complete and release criteria are met.
+</code></pre></details>
+<details class="file"><summary>gradlew</summary><pre><code>#!/bin/sh
+
+#
+# Copyright © 2015-2021 the original authors.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#      https://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+##############################################################################
+#
+#   Gradle start up script for POSIX generated by Gradle.
+#
+#   Important for running:
+#
+#   (1) You need a POSIX-compliant shell to run this script. If your /bin/sh is
+#       noncompliant, but you have some other compliant shell such as ksh or
+#       bash, then to run this script, type that shell name before the whole
+#       command line, like:
+#
+#           ksh Gradle
+#
+#       Busybox and similar reduced shells will NOT work, because this script
+#       requires all of these POSIX shell features:
+#         * functions;
+#         * expansions «$var», «${var}», «${var:-default}», «${var+SET}»,
+#           «${var#prefix}», «${var%suffix}», and «$( cmd )»;
+#         * compound commands having a testable exit status, especially «case»;
+#         * various built-in commands including «command», «set», and «ulimit».
+#
+#   Important for patching:
+#
+#   (2) This script targets any POSIX shell, so it avoids extensions provided
+#       by Bash, Ksh, etc; in particular arrays are avoided.
+#
+#       The "traditional" practice of packing multiple parameters into a
+#       space-separated string is a well documented source of bugs and security
+#       problems, so this is (mostly) avoided, by progressively accumulating
+#       options in "$@", and eventually passing that to Java.
+#
+#       Where the inherited environment variables (DEFAULT_JVM_OPTS, JAVA_OPTS,
+#       and GRADLE_OPTS) rely on word-splitting, this is performed explicitly;
+#       see the in-line comments for details.
+#
+#       There are tweaks for specific operating systems such as AIX, CygWin,
+#       Darwin, MinGW, and NonStop.
+#
+#   (3) This script is generated from the Groovy template
+#       https://github.com/gradle/gradle/blob/HEAD/platforms/jvm/plugins-application/src/main/resources/org/gradle/api/internal/plugins/unixStartScript.txt
+#       within the Gradle project.
+#
+#       You can find Gradle at https://github.com/gradle/gradle/.
+#
+##############################################################################
+
+# Attempt to set APP_HOME
+
+# Resolve links: $0 may be a link
+app_path=$0
+
+# Need this for daisy-chained symlinks.
+while
+    APP_HOME=${app_path%"${app_path##*/}"}  # leaves a trailing /; empty if no leading path
+    [ -h "$app_path" ]
+do
+    ls=$( ls -ld "$app_path" )
+    link=${ls#*' -&gt; '}
+    case $link in             #(
+      /*)   app_path=$link ;; #(
+      *)    app_path=$APP_HOME$link ;;
+    esac
+done
+
+# This is normally unused
+# shellcheck disable=SC2034
+APP_BASE_NAME=${0##*/}
+# Discard cd standard output in case $CDPATH is set (https://github.com/gradle/gradle/issues/25036)
+APP_HOME=$( cd -P "${APP_HOME:-./}" &gt; /dev/null &amp;&amp; printf '%s
+' "$PWD" ) || exit
+
+# Use the maximum available, or set MAX_FD != -1 to use that value.
+MAX_FD=maximum
+
+warn () {
+    echo "$*"
+} &gt;&amp;2
+
+die () {
+    echo
+    echo "$*"
+    echo
+    exit 1
+} &gt;&amp;2
+
+# OS specific support (must be 'true' or 'false').
+cygwin=false
+msys=false
+darwin=false
+nonstop=false
+case "$( uname )" in                #(
+  CYGWIN* )         cygwin=true  ;; #(
+  Darwin* )         darwin=true  ;; #(
+  MSYS* | MINGW* )  msys=true    ;; #(
+  NONSTOP* )        nonstop=true ;;
+esac
+
+CLASSPATH=$APP_HOME/gradle/wrapper/gradle-wrapper.jar
+
+
+# Determine the Java command to use to start the JVM.
+if [ -n "$JAVA_HOME" ] ; then
+    if [ -x "$JAVA_HOME/jre/sh/java" ] ; then
+        # IBM's JDK on AIX uses strange locations for the executables
+        JAVACMD=$JAVA_HOME/jre/sh/java
+    else
+        JAVACMD=$JAVA_HOME/bin/java
+    fi
+    if [ ! -x "$JAVACMD" ] ; then
+        die "ERROR: JAVA_HOME is set to an invalid directory: $JAVA_HOME
+
+Please set the JAVA_HOME variable in your environment to match the
+location of your Java installation."
+    fi
+else
+    JAVACMD=java
+    if ! command -v java &gt;/dev/null 2&gt;&amp;1
+    then
+        die "ERROR: JAVA_HOME is not set and no 'java' command could be found in your PATH.
+
+Please set the JAVA_HOME variable in your environment to match the
+location of your Java installation."
+    fi
+fi
+
+# Increase the maximum file descriptors if we can.
+if ! "$cygwin" &amp;&amp; ! "$darwin" &amp;&amp; ! "$nonstop" ; then
+    case $MAX_FD in #(
+      max*)
+        # In POSIX sh, ulimit -H is undefined. That's why the result is checked to see if it worked.
+        # shellcheck disable=SC2039,SC3045
+        MAX_FD=$( ulimit -H -n ) ||
+            warn "Could not query maximum file descriptor limit"
+    esac
+    case $MAX_FD in  #(
+      '' | soft) :;; #(
+      *)
+        # In POSIX sh, ulimit -n is undefined. That's why the result is checked to see if it worked.
+        # shellcheck disable=SC2039,SC3045
+        ulimit -n "$MAX_FD" ||
+            warn "Could not set maximum file descriptor limit to $MAX_FD"
+    esac
+fi
+
+# Collect all arguments for the java command, stacking in reverse order:
+#   * args from the command line
+#   * the main class name
+#   * -classpath
+#   * -D...appname settings
+#   * --module-path (only if needed)
+#   * DEFAULT_JVM_OPTS, JAVA_OPTS, and GRADLE_OPTS environment variables.
+
+# For Cygwin or MSYS, switch paths to Windows format before running java
+if "$cygwin" || "$msys" ; then
+    APP_HOME=$( cygpath --path --mixed "$APP_HOME" )
+    CLASSPATH=$( cygpath --path --mixed "$CLASSPATH" )
+
+    JAVACMD=$( cygpath --unix "$JAVACMD" )
+
+    # Now convert the arguments - kludge to limit ourselves to /bin/sh
+    for arg do
+        if
+            case $arg in                                #(
+              -*)   false ;;                            # don't mess with options #(
+              /?*)  t=${arg#/} t=/${t%%/*}              # looks like a POSIX filepath
+                    [ -e "$t" ] ;;                      #(
+              *)    false ;;
+            esac
+        then
+            arg=$( cygpath --path --ignore --mixed "$arg" )
+        fi
+        # Roll the args list around exactly as many times as the number of
+        # args, so each arg winds up back in the position where it started, but
+        # possibly modified.
+        #
+        # NB: a `for` loop captures its iteration list before it begins, so
+        # changing the positional parameters here affects neither the number of
+        # iterations, nor the values presented in `arg`.
+        shift                   # remove old arg
+        set -- "$@" "$arg"      # push replacement arg
+    done
+fi
+
+
+# Add default JVM options here. You can also use JAVA_OPTS and GRADLE_OPTS to pass JVM options to this script.
+DEFAULT_JVM_OPTS='"-Xmx64m" "-Xms64m"'
+
+# Collect all arguments for the java command:
+#   * DEFAULT_JVM_OPTS, JAVA_OPTS, JAVA_OPTS, and optsEnvironmentVar are not allowed to contain shell fragments,
+#     and any embedded shellness will be escaped.
+#   * For example: A user cannot expect ${Hostname} to be expanded, as it is an environment variable and will be
+#     treated as '${Hostname}' itself on the command line.
+
+set -- \
+        "-Dorg.gradle.appname=$APP_BASE_NAME" \
+        -classpath "$CLASSPATH" \
+        org.gradle.wrapper.GradleWrapperMain \
+        "$@"
+
+# Stop when "xargs" is not available.
+if ! command -v xargs &gt;/dev/null 2&gt;&amp;1
+then
+    die "xargs is not available"
+fi
+
+# Use "xargs" to parse quoted args.
+#
+# With -n1 it outputs one arg per line, with the quotes and backslashes removed.
+#
+# In Bash we could simply go:
+#
+#   readarray ARGS &lt; &lt;( xargs -n1 &lt;&lt;&lt;"$var" ) &amp;&amp;
+#   set -- "${ARGS[@]}" "$@"
+#
+# but POSIX shell has neither arrays nor command substitution, so instead we
+# post-process each arg (as a line of input to sed) to backslash-escape any
+# character that might be a shell metacharacter, then use eval to reverse
+# that process (while maintaining the separation between arguments), and wrap
+# the whole thing up as a single "set" statement.
+#
+# This will of course break if any of these variables contains a newline or
+# an unmatched quote.
+#
+
+eval "set -- $(
+        printf '%s\n' "$DEFAULT_JVM_OPTS $JAVA_OPTS $GRADLE_OPTS" |
+        xargs -n1 |
+        sed ' s~[^-[:alnum:]+,./:=@_]~\\&amp;~g; ' |
+        tr '\n' ' '
+    )" '"$@"'
+
+exec "$JAVACMD" "$@"
 </code></pre></details>
