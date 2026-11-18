@@ -63,7 +63,7 @@ fun SettingsScreen(repo: SettingsRepository, settings: AssistantSettings, onBack
         if (Settings.canDrawOverlays(context)) {
             overlayPrefs.edit().putBoolean("enabled", true).apply()
             overlayEnabled = true
-            ContextCompat.startForegroundService(context, Intent(context, QuantumOverlayService::class.java).setAction(QuantumOverlayService.ACTION_APP_BACKGROUND))
+            ContextCompat.startForegroundService(context, Intent(context, QuantumOverlayService::class.java).setAction(QuantumOverlayService.ACTION_APP_FOREGROUND))
         }
     }
     val device = remember { DeviceSnapshotReader.read(context) }
@@ -152,7 +152,7 @@ fun SettingsScreen(repo: SettingsRepository, settings: AssistantSettings, onBack
                     if (Settings.canDrawOverlays(context)) {
                         overlayPrefs.edit().putBoolean("enabled", true).apply()
                         overlayEnabled = true
-                        ContextCompat.startForegroundService(context, Intent(context, QuantumOverlayService::class.java).setAction(QuantumOverlayService.ACTION_APP_BACKGROUND))
+                        ContextCompat.startForegroundService(context, Intent(context, QuantumOverlayService::class.java).setAction(QuantumOverlayService.ACTION_APP_FOREGROUND))
                     } else {
                         overlayPermission.launch(Intent(Settings.ACTION_MANAGE_OVERLAY_PERMISSION, Uri.parse("package:${context.packageName}")))
                     }
@@ -176,7 +176,7 @@ fun SettingsScreen(repo: SettingsRepository, settings: AssistantSettings, onBack
                     if (Settings.canDrawOverlays(context)) {
                         overlayPrefs.edit().putBoolean("enabled", true).apply()
                         overlayEnabled = true
-                        ContextCompat.startForegroundService(context, Intent(context, QuantumOverlayService::class.java).setAction(QuantumOverlayService.ACTION_APP_BACKGROUND))
+                        ContextCompat.startForegroundService(context, Intent(context, QuantumOverlayService::class.java).setAction(QuantumOverlayService.ACTION_APP_FOREGROUND))
                     } else {
                         overlayPermission.launch(Intent(Settings.ACTION_MANAGE_OVERLAY_PERMISSION, Uri.parse("package:${context.packageName}")))
                     }
