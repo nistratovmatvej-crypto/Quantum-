@@ -175,4 +175,429 @@ dependencies {
     testImplementation("junit:junit:4.13.2")
     testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.8.1")
 }
+</code></pre></details><details class="file"><summary>app/src/main/AndroidManifest.xml</summary><pre><code>&lt;?xml version="1.0" encoding="utf-8"?&gt;
+&lt;manifest xmlns:android="http://schemas.android.com/apk/res/android"&gt;
+    &lt;uses-permission android:name="android.permission.RECORD_AUDIO" /&gt;
+    &lt;uses-permission android:name="android.permission.INTERNET" /&gt;
+
+    &lt;application
+        android:name=".QuantumApp"
+        android:allowBackup="false"
+        android:icon="@mipmap/ic_launcher"
+        android:label="@string/app_name"
+        android:supportsRtl="true"
+        android:theme="@style/Theme.Quantum"&gt;
+        &lt;activity
+            android:name=".MainActivity"
+            android:exported="true"
+            android:windowSoftInputMode="adjustResize"&gt;
+            &lt;intent-filter&gt;
+                &lt;action android:name="android.intent.action.MAIN" /&gt;
+                &lt;category android:name="android.intent.category.LAUNCHER" /&gt;
+            &lt;/intent-filter&gt;
+        &lt;/activity&gt;
+    &lt;/application&gt;
+&lt;/manifest&gt;
+</code></pre></details>
+<details class="file"><summary>app/src/main/java/com/quantum/assistant/MainActivity.kt</summary><pre><code>package com.quantum.assistant
+
+import android.os.Bundle
+import androidx.activity.ComponentActivity
+import androidx.activity.compose.setContent
+import androidx.activity.enableEdgeToEdge
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.ui.Modifier
+import androidx.lifecycle.ViewModelProvider
+import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.navigation.compose.NavHost
+import androidx.navigation.compose.composable
+import androidx.navigation.compose.rememberNavController
+import com.quantum.assistant.ui.home.HomeScreen
+import com.quantum.assistant.ui.home.HomeViewModel
+import com.quantum.assistant.ui.home.HomeViewModelFactory
+import com.quantum.assistant.ui.login.WelcomeScreen
+import com.quantum.assistant.ui.plans.PlansScreen
+import com.quantum.assistant.ui.settings.SettingsScreen
+import com.quantum.assistant.ui.theme.QuantumColors
+import com.quantum.assistant.ui.theme.QuantumTheme
+
+class MainActivity : ComponentActivity() {
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        enableEdgeToEdge()
+        val app = application as QuantumApp
+        setContent {
+            QuantumTheme {
+                val nav = rememberNavController()
+                val settings by app.settings.settings.collectAsState()
+                val start = if (app.profile.hasProfile()) "home" else "welcome"
+                val homeVm: HomeViewModel = viewModel(factory = HomeViewModelFactory(app.micSession))
+                Box(Modifier.fillMaxSize().background(QuantumColors.Background)) {
+                    NavHost(nav, startDestination = start) {
+                        composable("welcome") {
+                            WelcomeScreen { displayName -&gt;
+                                app.profile.saveProfile(displayName)
+                                nav.navigate("home") { popUpTo("welcome") { inclusive = true } }
+                            }
+                        }
+                        composable("home") {
+                            HomeScreen(
+                                vm = homeVm,
+                                settings = settings,
+                                profileName = app.profile.displayName(),
+                                onOpenSettings = { nav.navigate("settings") },
+                                onOpenPlans = { nav.navigate("plans") }
+                            )
+                        }
+                        composable("settings") {
+                            SettingsScreen(app.settings, settings) { nav.popBackStack() }
+                        }
+                        composable("plans") {
+                            PlansScreen(
+                                selectedTier = settings.selectedTier,
+                                onSelectTier = app.settings::setSelectedTier,
+                                onBack = { nav.popBackStack() }
+                            )
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    override fun onStop() {
+        val app = application as QuantumApp
+        ViewModelProvider(this, HomeViewModelFactory(app.micSession))[HomeViewModel::class.java].panel.onClose()
+        super.onStop()
+    }
+}
+</code></pre></details>
+<details class="file"><summary>app/src/main/java/com/quantum/assistant/QuantumApp.kt</summary><pre><code>package com.quantum.assistant
+
+import android.app.Application
+import android.content.Context
+import com.quantum.assistant.audio.AndroidSpeechRecognizerSession
+import com.quantum.assistant.data.ProfileStore
+import com.quantum.assistant.data.SettingsRepository
+import com.quantum.assistant.data.SharedPrefsStore
+
+class QuantumApp : Application() {
+    lateinit var settings: SettingsRepository
+        private set
+    lateinit var profile: ProfileStore
+        private set
+    val micSession by lazy { AndroidSpeechRecognizerSession(this) }
+
+    override fun onCreate() {
+        super.onCreate()
+        settings = SettingsRepository(SharedPrefsStore(getSharedPreferences("quantum_settings", Context.MODE_PRIVATE)))
+        profile = ProfileStore(getSharedPreferences("quantum_profile", Context.MODE_PRIVATE))
+    }
+}
+</code></pre></details>
+<details class="file"><summary>app/src/main/java/com/quantum/assistant/audio/MicSession.kt</summary><pre><code>package com.quantum.assistant.audio
+
+import android.Manifest
+import android.content.Context
+import android.content.Intent
+import android.content.pm.PackageManager
+import android.os.Bundle
+import android.speech.RecognitionListener
+import android.speech.RecognizerIntent
+import android.speech.SpeechRecognizer
+import androidx.core.content.ContextCompat
+import java.util.Locale
+
+sealed interface MicAvailability {
+    data object Available : MicAvailability
+    data class Unavailable(val reason: String) : MicAvailability
+}
+
+sealed interface MicStartResult {
+    data object Started : MicStartResult
+    data class Failed(val reason: String) : MicStartResult
+}
+
+interface MicListener {
+    fun onSpeechDetected()
+    fun onTranscript(text: String)
+    fun onError(reason: String)
+}
+
+interface MicSession {
+    val availability: MicAvailability
+    val reportsSpeechActivity: Boolean
+    fun start(listener: MicListener): MicStartResult
+    fun stop()
+}
+
+/**
+ * Uses Android's installed speech-recognition service. It starts only after the user
+ * taps the microphone and grants RECORD_AUDIO. The system recognition service may
+ * require internet depending on the device and installed language pack.
+ */
+class AndroidSpeechRecognizerSession(context: Context) : MicSession {
+    private val appContext = context.applicationContext
+    private var recognizer: SpeechRecognizer? = null
+    private var active = false
+
+    override val availability: MicAvailability =
+        if (SpeechRecognizer.isRecognitionAvailable(appContext)) MicAvailability.Available
+        else MicAvailability.Unavailable("На устройстве нет службы распознавания речи.")
+
+    override val reportsSpeechActivity: Boolean = true
+
+    override fun start(listener: MicListener): MicStartResult {
+        if (availability !is MicAvailability.Available) {
+            return MicStartResult.Failed((availability as MicAvailability.Unavailable).reason)
+        }
+        if (ContextCompat.checkSelfPermission(appContext, Manifest.permission.RECORD_AUDIO) != PackageManager.PERMISSION_GRANTED) {
+            return MicStartResult.Failed("Нет разрешения на микрофон. Разреши доступ и попробуй снова.")
+        }
+        return try {
+            stop()
+            val speech = SpeechRecognizer.createSpeechRecognizer(appContext)
+            recognizer = speech
+            speech.setRecognitionListener(object : RecognitionListener {
+                override fun onReadyForSpeech(params: Bundle?) { active = true }
+                override fun onBeginningOfSpeech() { listener.onSpeechDetected() }
+                override fun onRmsChanged(rmsdB: Float) {
+                    if (rmsdB &gt; 2.0f) listener.onSpeechDetected()
+                }
+                override fun onBufferReceived(buffer: ByteArray?) = Unit
+                override fun onEndOfSpeech() = Unit
+                override fun onError(error: Int) {
+                    active = false
+                    val message = when (error) {
+                        SpeechRecognizer.ERROR_AUDIO -&gt; "Ошибка аудиосистемы."
+                        SpeechRecognizer.ERROR_INSUFFICIENT_PERMISSIONS -&gt; "Android не выдал доступ к микрофону."
+                        SpeechRecognizer.ERROR_NETWORK, SpeechRecognizer.ERROR_NETWORK_TIMEOUT -&gt; "Служба распознавания недоступна. Проверь интернет."
+                        SpeechRecognizer.ERROR_NO_MATCH, SpeechRecognizer.ERROR_SPEECH_TIMEOUT -&gt; "Не удалось разобрать речь. Попробуй ещё раз."
+                        SpeechRecognizer.ERROR_RECOGNIZER_BUSY -&gt; "Служба распознавания занята."
+                        else -&gt; "Распознавание речи завершилось с ошибкой ($error)."
+                    }
+                    listener.onError(message)
+                    stop()
+                }
+                override fun onResults(results: Bundle?) {
+                    active = false
+                    val text = results?.getStringArrayList(SpeechRecognizer.RESULTS_RECOGNITION)?.firstOrNull()
+                    if (text.isNullOrBlank()) listener.onError("Речь не распознана. Попробуй ещё раз.")
+                    else listener.onTranscript(text)
+                    stop()
+                }
+                override fun onPartialResults(partialResults: Bundle?) = Unit
+                override fun onEvent(eventType: Int, params: Bundle?) = Unit
+            })
+            val intent = Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH).apply {
+                putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL, RecognizerIntent.LANGUAGE_MODEL_FREE_FORM)
+                putExtra(RecognizerIntent.EXTRA_LANGUAGE, Locale.getDefault().toLanguageTag())
+                putExtra(RecognizerIntent.EXTRA_PARTIAL_RESULTS, true)
+                putExtra(RecognizerIntent.EXTRA_MAX_RESULTS, 3)
+                putExtra(RecognizerIntent.EXTRA_CALLING_PACKAGE, appContext.packageName)
+            }
+            speech.startListening(intent)
+            MicStartResult.Started
+        } catch (t: Throwable) {
+            stop()
+            MicStartResult.Failed(t.message ?: "Не удалось запустить микрофон.")
+        }
+    }
+
+    override fun stop() {
+        val current = recognizer
+        recognizer = null
+        active = false
+        if (current != null) {
+            try { current.cancel() } catch (_: Throwable) { }
+            try { current.destroy() } catch (_: Throwable) { }
+        }
+    }
+}
+
+/** Explicit fallback for tests or devices without a recognition service. */
+object NoOpMicSession : MicSession {
+    override val availability = MicAvailability.Unavailable("Распознавание речи недоступно на этом устройстве.")
+    override val reportsSpeechActivity = false
+    override fun start(listener: MicListener): MicStartResult =
+        MicStartResult.Failed((availability as MicAvailability.Unavailable).reason)
+    override fun stop() = Unit
+}
+</code></pre></details>
+<details class="file"><summary>app/src/main/java/com/quantum/assistant/data/ProfileStore.kt</summary><pre><code>package com.quantum.assistant.data
+
+import android.content.SharedPreferences
+
+/**
+ * Local-only profile for the first launch. This is deliberately NOT presented
+ * as a cloud account or secure authentication; sync/sign-in provider comes later.
+ */
+class ProfileStore(private val prefs: SharedPreferences) {
+    fun hasProfile(): Boolean = !displayName().isNullOrBlank()
+    fun displayName(): String? = prefs.getString(KEY_NAME, null)?.trim()?.takeIf { it.isNotEmpty() }
+    fun saveProfile(name: String) {
+        val clean = name.trim().take(MAX_NAME)
+        require(clean.isNotEmpty()) { "Profile name must not be empty." }
+        prefs.edit().putString(KEY_NAME, clean).apply()
+    }
+    fun clearProfile() { prefs.edit().remove(KEY_NAME).apply() }
+
+    companion object {
+        const val MAX_NAME = 32
+        private const val KEY_NAME = "local_profile_name"
+    }
+}
+</code></pre></details>
+<details class="file"><summary>app/src/main/java/com/quantum/assistant/data/SettingsRepository.kt</summary><pre><code>package com.quantum.assistant.data
+
+import android.content.SharedPreferences
+import com.quantum.assistant.device.LocalTier
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
+
+/** Memory modes from PRODUCT_SPEC. Alpha 0.1 only stores the choice. */
+enum class MemoryMode(val label: String, val description: String) {
+    OFF("Off", "No cross-session memory."),
+    DIALOGUE_ONLY("Dialogue only", "Retain conversation history."),
+    FULL("Full", "Retain useful facts and preferences."),
+    FULL_CONFIGURABLE("Full + configurable", "Full memory with review, edit, pin and delete.")
+}
+
+data class AssistantSettings(
+    val assistantName: String = DEFAULT_NAME,
+    val speechSpeed: Float = 1.0f,
+    val memoryMode: MemoryMode = MemoryMode.OFF,
+    /** User's explicit local-tier choice; null = follow the (advisory) recommendation. No model is installed yet. */
+    val selectedTier: LocalTier? = null
+) {
+    val displayName: String get() = assistantName.trim().ifEmpty { DEFAULT_NAME }
+
+    companion object { const val DEFAULT_NAME = "Quantum" }
+}
+
+/** Tiny storage seam so persistence is unit-testable without Android. */
+interface KeyValueStore {
+    fun getString(key: String): String?
+    fun putString(key: String, value: String)
+}
+
+class SharedPrefsStore(private val prefs: SharedPreferences) : KeyValueStore {
+    override fun getString(key: String): String? = prefs.getString(key, null)
+    override fun putString(key: String, value: String) { prefs.edit().putString(key, value).apply() }
+}
+
+/** Non-sensitive settings only. Reads once at construction; every change is written immediately. */
+class SettingsRepository(private val store: KeyValueStore) {
+    private val _settings = MutableStateFlow(load())
+    val settings: StateFlow&lt;AssistantSettings&gt; = _settings.asStateFlow()
+
+    private fun load(): AssistantSettings {
+        val d = AssistantSettings()
+        return AssistantSettings(
+            assistantName = (store.getString(K_NAME) ?: d.assistantName).take(MAX_NAME),
+            speechSpeed = (store.getString(K_SPEED)?.toFloatOrNull() ?: d.speechSpeed).coerceIn(MIN_SPEED, MAX_SPEED),
+            memoryMode = MemoryMode.entries.firstOrNull { it.name == store.getString(K_MEMORY) } ?: d.memoryMode,
+            selectedTier = LocalTier.entries.firstOrNull { it.name == store.getString(K_TIER) }
+        )
+    }
+
+    fun setAssistantName(name: String) {
+        val v = name.take(MAX_NAME)
+        _settings.value = _settings.value.copy(assistantName = v); store.putString(K_NAME, v)
+    }
+
+    fun setSpeechSpeed(speed: Float) {
+        val v = speed.coerceIn(MIN_SPEED, MAX_SPEED)
+        _settings.value = _settings.value.copy(speechSpeed = v); store.putString(K_SPEED, v.toString())
+    }
+
+    fun setMemoryMode(mode: MemoryMode) {
+        _settings.value = _settings.value.copy(memoryMode = mode); store.putString(K_MEMORY, mode.name)
+    }
+
+    fun setSelectedTier(tier: LocalTier?) {
+        _settings.value = _settings.value.copy(selectedTier = tier); store.putString(K_TIER, tier?.name ?: "")
+    }
+
+    companion object {
+        const val MAX_NAME = 30
+        const val MIN_SPEED = 0.5f
+        const val MAX_SPEED = 2.0f
+        private const val K_NAME = "assistant_name"
+        private const val K_SPEED = "speech_speed"
+        private const val K_MEMORY = "memory_mode"
+        private const val K_TIER = "selected_tier"
+    }
+}
+</code></pre></details>
+<details class="file"><summary>app/src/main/java/com/quantum/assistant/device/Capability.kt</summary><pre><code>package com.quantum.assistant.device
+
+enum class LocalTier(val label: String) { METEOR("Quantum Meteor"), COMET("Quantum Comet"), NOVA("Quantum Nova") }
+
+/** Raw facts about the device. Nullable fields mean "could not be read", never "zero". */
+data class CapabilityInput(
+    val totalRamMb: Long,
+    val availableRamMb: Long,
+    val sdkInt: Int,
+    val abis: List&lt;String&gt;,
+    /** android.os.PowerManager THERMAL_STATUS_* (0 none .. 6 shutdown); null below API 29 or if unreadable. */
+    val thermalStatus: Int? = null,
+    val batteryPercent: Int? = null,
+    val powerSaveMode: Boolean? = null
+)
+
+enum class Verdict(val label: String) {
+    MEETS("Meets requirements"), MARGINAL("Marginal"), BELOW("Below requirements")
+}
+
+data class TierAssessment(val tier: LocalTier, val verdict: Verdict, val reasons: List&lt;String&gt;)
+
+data class CapabilityAssessment(
+    val tiers: List&lt;TierAssessment&gt;,
+    /** Highest tier that meets requirements, else Meteor if marginal, else null. Advisory only. */
+    val recommended: LocalTier?,
+    /** Signals that were readable and used. */
+    val measured: List&lt;String&gt;,
+    /** Signals NOT measured. Shown to the user so nothing is implied that wasn't checked. */
+    val notMeasured: List&lt;String&gt;
+)
+
+/** Replaceable: a future implementation can check real model files, free storage and benchmark results. */
+interface CapabilityAssessor {
+    fun assess(input: CapabilityInput): CapabilityAssessment
+}
+</code></pre></details>
+<details class="file"><summary>app/src/main/java/com/quantum/assistant/device/DeviceSnapshotReader.kt</summary><pre><code>package com.quantum.assistant.device
+
+import android.app.ActivityManager
+import android.content.Context
+import android.os.BatteryManager
+import android.os.Build
+import android.os.PowerManager
+
+/** Reads real values from Android. Anything unreadable becomes null rather than a guess. */
+object DeviceSnapshotReader {
+    fun read(context: Context): CapabilityInput {
+        val am = context.getSystemService(Context.ACTIVITY_SERVICE) as ActivityManager
+        val mem = ActivityManager.MemoryInfo().also { am.getMemoryInfo(it) }
+        val pm = context.getSystemService(Context.POWER_SERVICE) as? PowerManager
+        val bm = context.getSystemService(Context.BATTERY_SERVICE) as? BatteryManager
+        val battery = bm?.getIntProperty(BatteryManager.BATTERY_PROPERTY_CAPACITY)?.takeIf { it in 0..100 }
+        return CapabilityInput(
+            totalRamMb = mem.totalMem / BYTES_PER_MB,
+            availableRamMb = mem.availMem / BYTES_PER_MB,
+            sdkInt = Build.VERSION.SDK_INT,
+            abis = Build.SUPPORTED_ABIS.toList(),
+            thermalStatus = if (Build.VERSION.SDK_INT &gt;= 29) pm?.currentThermalStatus else null,
+            batteryPercent = battery,
+            powerSaveMode = pm?.isPowerSaveMode
+        )
+    }
+    private const val BYTES_PER_MB = 1024L * 1024L
+}
 </code></pre></details>
