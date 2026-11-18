@@ -14,28 +14,6 @@ import kotlinx.coroutines.launch
 
 enum class PanelState { COLLAPSED, EXPANDED_IDLE, LISTENING, PROCESSING, AWAITING_CONFIRMATION, SPEAKING, ERROR }
 
-/**
- * Floating star/panel state machine (ARCHITECTURE.md). Pure Kotlin; call from the main thread only.
- *
- * Valid transitions (everything else is ignored and the event method returns false):
- *   COLLAPSED             --starTap-->        EXPANDED_IDLE
- *   EXPANDED_IDLE         --micTap-->         LISTENING (or ERROR if the mic fails to start)
- *   LISTENING             --stop-->           EXPANDED_IDLE
- *   LISTENING             --transcript-->     PROCESSING
- *   LISTENING             --timeout-->        COLLAPSED
- *   PROCESSING            --actionProposed--> AWAITING_CONFIRMATION
- *   PROCESSING            --responseReady-->  SPEAKING | EXPANDED_IDLE
- *   AWAITING_CONFIRMATION --approve-->        SPEAKING | EXPANDED_IDLE
- *   AWAITING_CONFIRMATION --reject-->         EXPANDED_IDLE
- *   SPEAKING              --finished-->       EXPANDED_IDLE
- *   any non-COLLAPSED     --failure-->        ERROR (ERROR itself excluded)
- *   ERROR                 --dismiss-->        EXPANDED_IDLE
- *   any non-COLLAPSED     --close-->          COLLAPSED
- *
- * Timer rules: at most one timer job exists. It runs only while LISTENING, and only if it is honest to do so:
- * (a) capture is unavailable, so LISTENING is a labelled preview, or (b) the mic really reports speech activity.
- * A live mic without speech-activity reporting gets NO timer, so it can never cut off someone who is speaking.
- */
 class PanelController(
     private val scope: CoroutineScope,
     private val mic: MicSession,
@@ -43,26 +21,26 @@ class PanelController(
 ) {
     private val _state = MutableStateFlow(PanelState.COLLAPSED)
     val state: StateFlow<PanelState> = _state.asStateFlow()
-
     private val _secondsLeft = MutableStateFlow(timeoutSeconds)
     val secondsLeft: StateFlow<Int> = _secondsLeft.asStateFlow()
-
     private val _errorMessage = MutableStateFlow<String?>(null)
     val errorMessage: StateFlow<String?> = _errorMessage.asStateFlow()
+    private val _transcript = MutableStateFlow<String?>(null)
+    val transcript: StateFlow<String?> = _transcript.asStateFlow()
 
-    /** True if real capture is running/available; false means LISTENING is only a UI preview. */
     val isCaptureLive: Boolean get() = mic.availability is MicAvailability.Available
-
-    /** True only when the countdown is genuine silence detection driven by real speech activity. */
     val timeoutIsSilenceDetection: Boolean get() = isCaptureLive && mic.reportsSpeechActivity
-
     val unavailableReason: String? get() = (mic.availability as? MicAvailability.Unavailable)?.reason
-
     private var timer: Job? = null
 
     private val micListener = object : MicListener {
-        override fun onSpeechDetected() { if (_state.value == PanelState.LISTENING) restartTimer() }
-        override fun onTranscript(text: String) { onTranscriptFinalized() }
+        override fun onSpeechDetected() {
+            if (_state.value == PanelState.LISTENING && mic.reportsSpeechActivity) restartTimer()
+        }
+        override fun onTranscript(text: String) {
+            _transcript.value = text
+            onTranscriptFinalized()
+        }
         override fun onError(reason: String) { onFailure(reason) }
     }
 
@@ -70,20 +48,21 @@ class PanelController(
 
     fun onMicTap(): Boolean {
         if (_state.value != PanelState.EXPANDED_IDLE) return false
+        _transcript.value = null
         if (isCaptureLive) {
-            val result = try {
-                mic.start(micListener)
-            } catch (t: Throwable) {
-                MicStartResult.Failed(t.message ?: "Microphone startup failed.")
-            }
+            val result = try { mic.start(micListener) }
+            catch (t: Throwable) { MicStartResult.Failed(t.message ?: "Microphone startup failed.") }
             if (result is MicStartResult.Failed) {
                 safeStopMic()
                 enter(PanelState.ERROR, result.reason)
                 return true
             }
+        } else {
+            enter(PanelState.ERROR, unavailableReason ?: "Микрофон недоступен.")
+            return true
         }
         enter(PanelState.LISTENING)
-        if (!isCaptureLive || mic.reportsSpeechActivity) restartTimer()
+        if (mic.reportsSpeechActivity) restartTimer()
         return true
     }
 
@@ -98,15 +77,11 @@ class PanelController(
     }
 
     fun onActionProposed(): Boolean = move(PanelState.PROCESSING, PanelState.AWAITING_CONFIRMATION)
-
     fun onResponseReady(speak: Boolean): Boolean =
         move(PanelState.PROCESSING, if (speak) PanelState.SPEAKING else PanelState.EXPANDED_IDLE)
-
     fun onApprove(speak: Boolean): Boolean =
         move(PanelState.AWAITING_CONFIRMATION, if (speak) PanelState.SPEAKING else PanelState.EXPANDED_IDLE)
-
     fun onReject(): Boolean = move(PanelState.AWAITING_CONFIRMATION, PanelState.EXPANDED_IDLE)
-
     fun onSpeakingFinished(): Boolean = move(PanelState.SPEAKING, PanelState.EXPANDED_IDLE)
 
     fun onFailure(reason: String): Boolean {
@@ -117,7 +92,6 @@ class PanelController(
 
     fun onDismissError(): Boolean = move(PanelState.ERROR, PanelState.EXPANDED_IDLE)
 
-    /** Close from any state. Always stops audio and timer, even if already collapsed (defensive). */
     fun onClose(): Boolean {
         stopAudioAndTimer()
         if (_state.value == PanelState.COLLAPSED) return false
@@ -141,10 +115,7 @@ class PanelController(
     }
 
     private fun safeStopMic() {
-        try {
-            mic.stop()
-        } catch (t: Throwable) {
-            // Cleanup must not crash the UI or prevent the state machine from closing.
+        try { mic.stop() } catch (t: Throwable) {
             _errorMessage.value = t.message ?: "Microphone cleanup failed."
         }
     }
@@ -153,9 +124,14 @@ class PanelController(
         timer?.cancel()
         timer = scope.launch {
             var left = timeoutSeconds
-            while (left > 0) { _secondsLeft.value = left; delay(1_000); left-- }
+            while (left > 0) {
+                _secondsLeft.value = left
+                delay(1_000)
+                left--
+            }
             if (_state.value == PanelState.LISTENING) {
-                stopAudioAndTimer(); enter(PanelState.COLLAPSED)
+                stopAudioAndTimer()
+                enter(PanelState.COLLAPSED)
             }
         }
     }
