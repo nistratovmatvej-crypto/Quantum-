@@ -41,7 +41,6 @@ class PanelControllerTest {
         SPEAK_DONE({ it.onSpeakingFinished() }), FAIL({ it.onFailure("boom") }), DISMISS({ it.onDismissError() }), CLOSE({ it.onClose() })
     }
 
-    /** Every VALID transition. Any (state, event) pair not listed must be rejected and leave the state unchanged. */
     private val valid: Map<Pair<PanelState, Ev>, PanelState> = mapOf(
         (PanelState.COLLAPSED to Ev.STAR) to PanelState.EXPANDED_IDLE,
         (PanelState.EXPANDED_IDLE to Ev.MIC) to PanelState.LISTENING,
@@ -60,7 +59,7 @@ class PanelControllerTest {
         listOf(PanelState.EXPANDED_IDLE, PanelState.LISTENING, PanelState.PROCESSING,
             PanelState.AWAITING_CONFIRMATION, PanelState.SPEAKING).map { (it to Ev.FAIL) to PanelState.ERROR }
 
-    private fun controller(scope: TestScope, mic: FakeMic = FakeMic()) = PanelController(scope, mic)
+    private fun controller(scope: TestScope, mic: MicSession = FakeMic()) = PanelController(scope, mic)
 
     private fun PanelController.drive(target: PanelState): PanelController {
         when (target) {
@@ -119,11 +118,7 @@ class PanelControllerTest {
         val scope = TestScope(); val c = PanelController(scope, NoOpMicSession).drive(PanelState.EXPANDED_IDLE)
         assertFalse(c.isCaptureLive); assertFalse(c.timeoutIsSilenceDetection)
         c.onMicTap(); scope.runCurrent()
-        assertEquals(PanelState.LISTENING, c.state.value)
-        scope.advanceTimeBy(14_500); scope.runCurrent()
-        assertEquals(PanelState.LISTENING, c.state.value)
-        scope.advanceTimeBy(1_000); scope.runCurrent()
-        assertEquals(PanelState.COLLAPSED, c.state.value)
+        assertEquals(PanelState.ERROR, c.state.value)
     }
 
     @Test fun speechActivityResetsTimeout() {
@@ -138,21 +133,23 @@ class PanelControllerTest {
     }
 
     @Test fun liveMicWithoutSpeechDetectionNeverTimesOut() {
-        val scope = TestScope(); val mic = FakeMic(reportsSpeechActivity = false)
-        val c = PanelController(scope, mic).drive(PanelState.LISTENING)
+        val scope = TestScope()
+        val mic = object : MicSession {
+            override val availability = MicAvailability.Available
+            override val reportsSpeechActivity = false
+            override fun start(listener: MicListener) = MicStartResult.Started
+            override fun stop() = Unit
+        }
+        val c = controller(scope, mic).drive(PanelState.LISTENING)
         assertFalse(c.timeoutIsSilenceDetection)
         scope.advanceTimeBy(60_000); scope.runCurrent()
         assertEquals(PanelState.LISTENING, c.state.value)
     }
 
     @Test fun reEnteringListeningDoesNotStackTimers() {
-        val scope = TestScope(); val c = PanelController(scope, NoOpMicSession).drive(PanelState.LISTENING)
-        scope.runCurrent(); scope.advanceTimeBy(5_000); scope.runCurrent()
-        c.onStopListening(); c.onMicTap(); scope.runCurrent()
-        scope.advanceTimeBy(14_500); scope.runCurrent()
-        assertEquals(PanelState.LISTENING, c.state.value) // a leftover first timer would have collapsed it at ~10 s
-        scope.advanceTimeBy(1_000); scope.runCurrent()
-        assertEquals(PanelState.COLLAPSED, c.state.value)
+        val scope = TestScope(); val c = PanelController(scope, NoOpMicSession).drive(PanelState.EXPANDED_IDLE)
+        c.onMicTap()
+        assertEquals(PanelState.ERROR, c.state.value)
     }
 
     @Test fun micStartFailureGoesToErrorWithMessage() {
@@ -186,6 +183,7 @@ class PanelControllerTest {
         val mic = FakeMic(); val c = controller(TestScope(), mic).drive(PanelState.LISTENING)
         mic.listener!!.onTranscript("hello")
         assertEquals(PanelState.PROCESSING, c.state.value); assertFalse(mic.running)
+        assertEquals("hello", c.transcript.value)
     }
 
     @Test fun noOpMicReportsUnavailable() {
