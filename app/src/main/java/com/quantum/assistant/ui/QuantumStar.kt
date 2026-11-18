@@ -6,40 +6,30 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.drawscope.Stroke
 import com.quantum.assistant.ui.theme.QuantumColors
 
-/**
- * Quantum's concentric-orbit mark, adapted from the user's supplied logo.
- * Kept as a Canvas drawing so it is crisp at every size and needs no image asset.
- */
+/** Geometric concentric Quantum mark. Drawn natively for crisp adaptive sizing. */
 @Composable
 fun QuantumStar(modifier: Modifier = Modifier, glow: Boolean = false) {
     Canvas(modifier) {
         val c = center
-        val radius = size.minDimension * 0.46f
-        if (glow) {
-            drawCircle(
-                brush = Brush.radialGradient(
-                    colors = listOf(QuantumColors.Accent.copy(alpha = 0.30f), Color.Transparent),
-                    center = c,
-                    radius = radius * 1.45f
-                ),
-                radius = radius * 1.45f,
-                center = c
-            )
-        }
-        // Outer porcelain ring.
-        drawCircle(color = QuantumColors.Porcelain, radius = radius, center = c)
-        // Cyan inner field leaves a consistent, broad ring.
-        drawCircle(color = QuantumColors.Accent, radius = radius * 0.60f, center = c)
-        // Center dot echoes the supplied mark.
-        drawCircle(color = QuantumColors.Porcelain, radius = radius * 0.18f, center = c)
-        // A fine highlight gives the mark a little depth without a 3D effect.
-        drawCircle(
-            color = Color.White.copy(alpha = 0.14f),
-            radius = radius * 0.985f,
-            center = Offset(c.x, c.y - radius * 0.015f),
-            style = androidx.compose.ui.graphics.drawscope.Stroke(width = radius * 0.012f)
+        val r = size.minDimension * .46f
+        if (glow) drawCircle(
+            brush = Brush.radialGradient(
+                listOf(QuantumColors.Accent.copy(alpha = .22f), Color.Transparent),
+                center = c, radius = r * 1.55f
+            ), radius = r * 1.55f, center = c
         )
+        drawCircle(QuantumColors.Porcelain, r, c)
+        drawCircle(
+            brush = Brush.linearGradient(
+                listOf(QuantumColors.AccentBright, QuantumColors.AccentDeep),
+                start = Offset(c.x - r, c.y - r), end = Offset(c.x + r, c.y + r)
+            ), r * .62f, c
+        )
+        drawCircle(QuantumColors.Porcelain, r * .19f, c)
+        drawCircle(Color.White.copy(alpha = .18f), r * .985f, c,
+            style = Stroke(width = (r * .012f).coerceAtLeast(1f)))
     }
 }
