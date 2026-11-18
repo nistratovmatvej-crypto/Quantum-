@@ -47,23 +47,24 @@ import androidx.compose.ui.unit.dp
 import com.quantum.assistant.ui.QuantumStar
 import com.quantum.assistant.ui.theme.QuantumColors
 
-/** Everything the panel can ask the state machine to do. */
 class PanelActions(
-    val onStarTap: () -> Unit, val onMicTap: () -> Unit, val onStopListening: () -> Unit, val onClose: () -> Unit,
-    val onApprove: () -> Unit, val onReject: () -> Unit, val onSpeakingFinished: () -> Unit, val onDismissError: () -> Unit
+    val onStarTap: () -> Unit,
+    val onMicTap: () -> Unit,
+    val onStopListening: () -> Unit,
+    val onClose: () -> Unit,
+    val onApprove: () -> Unit,
+    val onReject: () -> Unit,
+    val onSpeakingFinished: () -> Unit,
+    val onDismissError: () -> Unit
 ) {
     companion object {
-        fun from(c: PanelController) = PanelActions(
-            { c.onStarTap() }, { c.onMicTap() }, { c.onStopListening() }, { c.onClose() },
+        fun from(c: PanelController, onMicTap: () -> Unit = { c.onMicTap() }) = PanelActions(
+            { c.onStarTap() }, onMicTap, { c.onStopListening() }, { c.onClose() },
             { c.onApprove(speak = false) }, { c.onReject() }, { c.onSpeakingFinished() }, { c.onDismissError() }
         )
     }
 }
 
-/**
- * In-app floating star + horizontal panel. NOT a system overlay yet (see CLAUDE_HANDOFF.md).
- * Tap 1 expands; tap 2 (the mic control) starts listening; close is always visible when expanded.
- */
 @Composable
 fun FloatingAssistant(
     state: PanelState,
@@ -76,48 +77,47 @@ fun FloatingAssistant(
 ) {
     val expanded = state != PanelState.COLLAPSED
     val listening = state == PanelState.LISTENING
-    val shape = RoundedCornerShape(36.dp)
+    val shape = RoundedCornerShape(34.dp)
 
     Row(
-        modifier = modifier
-            .animateContentSize(spring(dampingRatio = 0.85f, stiffness = 400f))
-            .background(QuantumColors.NavySurface, shape)
-            .border(1.dp, if (listening) QuantumColors.Cyan else QuantumColors.NavyOutline, shape)
+        modifier = modifier.animateContentSize(spring(dampingRatio = 0.85f, stiffness = 400f))
+            .background(QuantumColors.BackgroundElevated, shape)
+            .border(1.dp, if (listening) QuantumColors.AccentBright else QuantumColors.Outline, shape)
             .padding(4.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(4.dp)
     ) {
         Box(
-            Modifier.size(64.dp).clickable(enabled = !expanded, role = Role.Button, onClick = actions.onStarTap)
-                .semantics { contentDescription = if (expanded) "Quantum" else "Open Quantum panel" },
+            Modifier.size(60.dp).clickable(enabled = !expanded, role = Role.Button, onClick = actions.onStarTap)
+                .semantics { contentDescription = if (expanded) "Quantum" else "Открыть Quantum" },
             contentAlignment = Alignment.Center
-        ) { QuantumStar(Modifier.size(52.dp), glow = !expanded) }
+        ) { QuantumStar(Modifier.size(48.dp), glow = !expanded) }
 
         if (expanded) {
             val (title, detail) = when (state) {
-                PanelState.EXPANDED_IDLE -> "Microphone off" to
-                    if (captureLive) "Tap the mic to start." else "Capture unavailable in this build. Mic gives a preview only."
-                PanelState.LISTENING -> when {
-                    !captureLive -> "Preview only" to "No audio is captured. Collapses in ${secondsLeft}s."
-                    timeoutIsSilenceDetection -> "Listening" to "Stops after ${secondsLeft}s without speech."
-                    else -> "Listening" to "Tap stop when you are done."
-                }
-                PanelState.PROCESSING -> "Working" to "Please wait."
-                PanelState.AWAITING_CONFIRMATION -> "Confirm action" to "Nothing runs until you approve."
-                PanelState.SPEAKING -> "Speaking" to ""
-                PanelState.ERROR -> "Something went wrong" to (errorMessage ?: "")
+                PanelState.EXPANDED_IDLE -> "Готов к работе" to "Нажми на микрофон, чтобы начать."
+                PanelState.LISTENING -> if (timeoutIsSilenceDetection) {
+                    "Слушаю тебя" to "Остановка при тишине: $secondsLeft сек."
+                } else "Слушаю" to "Нажми стоп, когда закончишь."
+                PanelState.PROCESSING -> "Обрабатываю" to "Распознаю речь."
+                PanelState.AWAITING_CONFIRMATION -> "Нужно подтверждение" to "Ничего не выполнится без тебя."
+                PanelState.SPEAKING -> "Говорю" to ""
+                PanelState.ERROR -> "Не удалось запустить" to (errorMessage ?: "Проверь разрешение микрофона.")
                 PanelState.COLLAPSED -> "" to ""
             }
-            Column(Modifier.widthIn(min = 120.dp, max = 190.dp).padding(horizontal = 4.dp).semantics { liveRegion = LiveRegionMode.Polite }) {
-                Text(title, style = MaterialTheme.typography.labelLarge, color = if (listening) QuantumColors.Cyan else Color.White)
-                if (detail.isNotEmpty()) Text(detail, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            Column(
+                Modifier.widthIn(min = 126.dp, max = 196.dp).padding(horizontal = 4.dp)
+                    .semantics { liveRegion = LiveRegionMode.Polite }
+            ) {
+                Text(title, style = MaterialTheme.typography.labelLarge, color = if (listening) QuantumColors.AccentBright else QuantumColors.Porcelain)
+                if (detail.isNotEmpty()) Text(detail, style = MaterialTheme.typography.bodySmall, color = QuantumColors.TextMuted)
                 when (state) {
                     PanelState.AWAITING_CONFIRMATION -> Row {
-                        TextButton(onClick = actions.onApprove) { Text("Approve") }
-                        TextButton(onClick = actions.onReject) { Text("Reject") }
+                        TextButton(onClick = actions.onApprove) { Text("Да") }
+                        TextButton(onClick = actions.onReject) { Text("Нет") }
                     }
-                    PanelState.SPEAKING -> TextButton(onClick = actions.onSpeakingFinished) { Text("Stop") }
-                    PanelState.ERROR -> TextButton(onClick = actions.onDismissError) { Text("Dismiss") }
+                    PanelState.SPEAKING -> TextButton(onClick = actions.onSpeakingFinished) { Text("Стоп") }
+                    PanelState.ERROR -> TextButton(onClick = actions.onDismissError) { Text("Понятно") }
                     else -> Unit
                 }
             }
@@ -125,9 +125,10 @@ fun FloatingAssistant(
                 MicButton(listening, if (listening) actions.onStopListening else actions.onMicTap)
             }
             Box(
-                Modifier.size(48.dp).clickable(role = Role.Button, onClick = actions.onClose).semantics { contentDescription = "Close panel" },
+                Modifier.size(46.dp).clickable(role = Role.Button, onClick = actions.onClose)
+                    .semantics { contentDescription = "Закрыть панель" },
                 contentAlignment = Alignment.Center
-            ) { Icon(Icons.Default.Close, null, tint = MaterialTheme.colorScheme.onSurfaceVariant) }
+            ) { Icon(Icons.Default.Close, null, tint = QuantumColors.TextMuted) }
         }
     }
 }
@@ -135,20 +136,21 @@ fun FloatingAssistant(
 @Composable
 private fun MicButton(listening: Boolean, onClick: () -> Unit) {
     val pulse by rememberInfiniteTransition(label = "pulse").animateFloat(
-        initialValue = 1f, targetValue = 1.25f,
-        animationSpec = infiniteRepeatable(tween(900, easing = FastOutSlowInEasing), RepeatMode.Reverse), label = "pulse"
+        initialValue = 1f, targetValue = 1.22f,
+        animationSpec = infiniteRepeatable(tween(900, easing = FastOutSlowInEasing), RepeatMode.Reverse),
+        label = "pulse"
     )
     Box(
-        Modifier.size(56.dp).clickable(role = Role.Button, onClick = onClick)
-            .semantics { contentDescription = if (listening) "Stop listening" else "Start microphone" },
+        Modifier.size(54.dp).clickable(role = Role.Button, onClick = onClick)
+            .semantics { contentDescription = if (listening) "Остановить запись" else "Включить микрофон" },
         contentAlignment = Alignment.Center
     ) {
-        if (listening) Box(Modifier.size(44.dp).scale(pulse).background(QuantumColors.Cyan.copy(alpha = 0.25f), CircleShape))
+        if (listening) Box(Modifier.size(42.dp).scale(pulse).background(QuantumColors.Accent.copy(alpha = 0.25f), CircleShape))
         Box(
-            Modifier.size(44.dp).background(if (listening) QuantumColors.Cyan else QuantumColors.NavyOutline, CircleShape),
+            Modifier.size(42.dp).background(if (listening) QuantumColors.AccentBright else QuantumColors.SurfaceRaised, CircleShape),
             contentAlignment = Alignment.Center
         ) {
-            val ink = if (listening) QuantumColors.Navy else Color.White
+            val ink = if (listening) QuantumColors.Background else QuantumColors.Porcelain
             Canvas(Modifier.size(22.dp)) {
                 if (listening) {
                     drawRoundRect(ink, Offset(size.width * 0.2f, size.height * 0.2f), Size(size.width * 0.6f, size.height * 0.6f), CornerRadius(4f))
