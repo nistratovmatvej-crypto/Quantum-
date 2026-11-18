@@ -15,3 +15,164 @@ a{color:#6bd5ed}code{color:#a8eafa}
 <div class="notice"><b>For Claude:</b> This document contains the text source files and project documentation from the Quantum repository at the time of export. Inspect all sections before changing anything. Preserve the existing architecture and implemented functionality; do not rebuild from scratch. The binary Gradle Wrapper JAR is not embedded in this HTML; its repository location is listed at the end.</div>
 <h2>Project source files</h2>
 <div class="muted">Open each file section to inspect its full contents. File paths are preserved.</div>
+<details class="file"><summary>README.md</summary><pre><code># Quantum
+
+**Quantum Alpha 0.2** — native Android assistant foundation with a user-controlled microphone and speech-to-text.
+
+## Current features
+- First-launch local profile (device-only; not cloud authentication).
+- Deep Atlantic teal / porcelain Quantum identity and concentric logo.
+- Expandable in-app Dynamic Island pill. It is not a system-wide overlay.
+- Microphone permission is requested only after the user taps the mic.
+- Android speech-recognition service returns a transcript in the app.
+- Listening stops when the user taps Stop, closes the panel, the app backgrounds, or the silence timer expires.
+- Local model tier selector: Meteor / Comet / Nova. Selection is saved; model files are not bundled yet.
+- Supernova Pro plan preview. Google Play billing is not configured; purchases are disabled.
+- Settings persist locally.
+
+## Important limitations
+- The recognized text is shown, but no conversational AI provider is connected yet.
+- Speech recognition availability and offline language packs depend on the Android device. The system recognition service may use the network.
+- No local LLM is bundled; Meteor / Comet / Nova are selectable profiles only.
+- The first-launch profile is local-only, not secure account authentication or cross-device sync.
+- Subscription cards are informational only until Play Console products and billing integration are configured.
+- Device-control actions, TTS, reminders, macros, widgets and notification summaries are not implemented yet.
+- The Dynamic Island control is inside the app, not an always-on system overlay. The microphone is never always listening.
+
+## Build and test
+Requires JDK 17 and Android SDK platform 35.
+
+```bash
+./gradlew clean testDebugUnitTest
+./gradlew assembleDebug
+```
+
+GitHub Actions runs the same unit-test and debug-APK build steps on pushes and pull requests. A green check means CI compiled the project, ran unit tests, and produced a debug APK; it does not replace device testing.
+
+## Product direction
+See [PRODUCT_SPEC](docs/PRODUCT_SPEC.md), [ARCHITECTURE](docs/ARCHITECTURE.md), [ROADMAP](docs/ROADMAP.md), and [DESIGN_SYSTEM](docs/DESIGN_SYSTEM.md).
+</code></pre></details>
+<details class="file"><summary>CHANGELOG.md</summary><pre><code># Changelog
+
+## Quantum Alpha 0.2.0 — first usable Android shell
+
+- Added explicit runtime microphone permission flow.
+- Connected Android SpeechRecognizer for real speech-to-text.
+- Added a top-centred expandable in-app Dynamic Island control.
+- Added first-launch local profile onboarding.
+- Added Meteor / Comet / Nova local-tier selector with saved preference.
+- Added Supernova Pro plan preview and clearly disabled purchase action until Play Billing is configured.
+- Fixed a unit-test compile mismatch and expanded microphone lifecycle coverage.
+- Preserved the Quantum concentric mark and Atlantic teal / porcelain design system.
+
+### Limitations
+No conversational AI, bundled local model, cloud account, Play Billing purchase flow, text-to-speech, macros or device-control execution is included yet. The profile is local-only. The Dynamic Island is in-app, not a system-wide overlay.
+</code></pre></details>
+<details class="file"><summary>CLAUDE_HANDOFF.md</summary><pre><code># CLAUDE_HANDOFF — Quantum Alpha 0.1 (completion &amp; repair pass)
+
+## Build and test results — NOTHING WAS BUILT OR RUN
+The environment had no Android SDK, no Gradle, no Gradle distribution and no network, so `./gradlew assembleDebug`
+and `./gradlew testDebugUnitTest` were **not run**. The project is **unverified**: it has never been compiled, and none of the
+unit tests have been executed. What I did check: all XML parses; Kotlin brackets balance; I hand-traced the timer tests' virtual-time maths.
+Expect possible compile errors on first sync.
+
+## The missing-files report
+The previous ZIP I produced listed `MainActivity.kt`, `QuantumApp.kt` and all other sources, but I cannot see what reached you.
+This ZIP re-includes everything. Every file is also in `QUANTUM_SOURCE.html`.
+
+## Gradle wrapper: incomplete (honest)
+`gradle-wrapper.jar` is **not included**: it is a binary that cannot be fetched or faithfully recreated offline.
+Included: `gradle-wrapper.properties` (Gradle 8.10.2), plus `gradlew` / `gradlew.bat` which are **simplified launchers, not the official scripts**.
+They fail with a clear message while the jar is missing. Fix with either:
+- open the folder in Android Studio (it downloads Gradle from the properties file; no jar needed), or
+- run `gradle wrapper --gradle-version 8.10.2` once with a system Gradle to generate the official jar and scripts.
+
+## Versions (chosen to be mutually compatible; unverified by build)
+AGP 8.6.1, Gradle 8.10.2, Kotlin 2.0.20 + Compose compiler plugin, Compose BOM 2024.09.03, JDK 17+ (21 fine), compileSdk/targetSdk 35, minSdk 26.
+Test-only extra: `kotlinx-coroutines-test` 1.8.1 (needed for virtual-time timer tests).
+
+## What changed
+- **PanelController** rewritten: all 7 states, explicit transition table (documented in the file), every invalid event rejected (returns false, state unchanged). One timer job, cancelled before any restart/stop/close. Closing always stops audio.
+- **Timer honesty:** it counts as silence detection only if the mic really reports speech activity. With capture unavailable (now) LISTENING is a labelled **preview** ("No audio is captured"). A live mic without speech detection gets no timer, so it can never cut off a speaking user.
+- **MicSession**: now reports `availability` and `reportsSpeechActivity`, takes a `MicListener` (speech/transcript/error callbacks) for a future real implementation. `NoOpMicSession` states capture is unavailable. No new permissions.
+- **Capability**: replaced RAM-only code with `CapabilityInput` -&gt; `CapabilityAssessor` -&gt; per-tier verdicts + reasons + lists of what was/wasn't measured. Reads RAM, API level, ABI, and (when readable) thermal status, battery %, battery saver. GPU/NPU/storage/benchmarks are explicitly **not measured**. Threshold numbers are **placeholders**.
+- **Tier selection** (Automatic / Meteor / Comet / Nova) added to Settings and persisted; no model exists yet, so it only saves the choice.
+- **Settings**: repository now uses a `KeyValueStore` seam (SharedPreferences in the app), so persistence is unit-testable; corrupt values fall back to defaults.
+- **UI**: panel shows text/controls for all 7 states (Approve/Reject, Stop speaking, Dismiss are real transitions but unreachable until producers exist); live-region announcements; 48dp targets; Home mic status reflects capture availability.
+- Added: `gradlew`, `gradlew.bat`, `ThresholdCapabilityAssessorTest`, `SettingsRepositoryTest`, expanded `PanelControllerTest` (full state x event matrix, manual stop, close from every state, preview timeout, speech reset, no timer stacking, mic failure paths).
+
+## What works / is incomplete
+Written and expected to work: navigation, star/panel behaviour, settings persistence, device readout and tier verdicts. **Unverified until built.**
+Incomplete by design: no real microphone, speech recognition, TTS, AI, memory, voices, billing, device actions, or system overlay.
+The panel is in-app only and collapses when the app is backgrounded.
+
+## Known limitations
+Hard-coded UI strings; panel not draggable; no language override; PROCESSING/AWAITING_CONFIRMATION/SPEAKING are only reachable from tests today; tier thresholds are invented placeholders.
+
+## Next milestone (Alpha 0.2)
+Get a green build and test run first. Then implement a real `MicSession` (RECORD_AUDIO at point of use, interruption handling, real voice-activity detection), add STT, then TTS.
+</code></pre></details>
+<details class="file"><summary>build.gradle.kts</summary><pre><code>plugins {
+    id("com.android.application") version "8.6.1" apply false
+    id("org.jetbrains.kotlin.android") version "2.0.20" apply false
+    id("org.jetbrains.kotlin.plugin.compose") version "2.0.20" apply false
+}
+</code></pre></details>
+<details class="file"><summary>settings.gradle.kts</summary><pre><code>pluginManagement { repositories { google(); mavenCentral(); gradlePluginPortal() } }
+dependencyResolutionManagement {
+    repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS)
+    repositories { google(); mavenCentral() }
+}
+rootProject.name = "Quantum"
+include(":app")
+</code></pre></details>
+<details class="file"><summary>gradle.properties</summary><pre><code>org.gradle.jvmargs=-Xmx2g -Dfile.encoding=UTF-8
+android.useAndroidX=true
+kotlin.code.style=official
+android.nonTransitiveRClass=true
+</code></pre></details>
+<details class="file"><summary>gradle/wrapper/gradle-wrapper.properties</summary><pre><code>distributionBase=GRADLE_USER_HOME
+distributionPath=wrapper/dists
+distributionUrl=https\://services.gradle.org/distributions/gradle-8.10.2-bin.zip
+networkTimeout=10000
+validateDistributionUrl=true
+zipStoreBase=GRADLE_USER_HOME
+zipStorePath=wrapper/dists
+</code></pre></details>
+<details class="file"><summary>app/build.gradle.kts</summary><pre><code>plugins {
+    id("com.android.application")
+    id("org.jetbrains.kotlin.android")
+    id("org.jetbrains.kotlin.plugin.compose")
+}
+android {
+    namespace = "com.quantum.assistant"
+    compileSdk = 35
+    defaultConfig {
+        applicationId = "com.quantum.assistant"
+        minSdk = 26
+        targetSdk = 35
+        versionCode = 2
+        versionName = "0.2.0-alpha"
+    }
+    buildTypes { release { isMinifyEnabled = false } }
+    compileOptions {
+        sourceCompatibility = JavaVersion.VERSION_17
+        targetCompatibility = JavaVersion.VERSION_17
+    }
+    kotlinOptions { jvmTarget = "17" }
+    buildFeatures { compose = true; buildConfig = true }
+}
+dependencies {
+    implementation(platform("androidx.compose:compose-bom:2024.09.03"))
+    implementation("androidx.compose.ui:ui")
+    implementation("androidx.compose.material3:material3")
+    implementation("androidx.compose.material:material-icons-core")
+    implementation("androidx.core:core-ktx:1.13.1")
+    implementation("androidx.activity:activity-compose:1.9.2")
+    implementation("androidx.lifecycle:lifecycle-runtime-compose:2.8.6")
+    implementation("androidx.lifecycle:lifecycle-viewmodel-compose:2.8.6")
+    implementation("androidx.navigation:navigation-compose:2.8.2")
+    testImplementation("junit:junit:4.13.2")
+    testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.8.1")
+}
+</code></pre></details>
