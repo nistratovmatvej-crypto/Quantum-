@@ -43,3 +43,5 @@ A green GitHub Actions check means CI compiled the project, ran unit tests and p
 See [PRODUCT_SPEC](docs/PRODUCT_SPEC.md), [ARCHITECTURE](docs/ARCHITECTURE.md) and [ROADMAP](docs/ROADMAP.md).
 
 See [Quantum Fluid overlay implementation](docs/QUANTUM_FLUID_OVERLAY.md) for Android permissions, behavior and limitations.
+
+<!-- Build retry after Kotlin fixes -->
