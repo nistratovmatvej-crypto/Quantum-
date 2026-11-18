@@ -68,7 +68,13 @@ class QuantumIslandService : Service() {
         if (!Settings.canDrawOverlays(this)) { stopSelf(); return }
         if (island == null) {
             val view = IslandView(this)
-            view.setOnLongClickListener {\n                removeIsland()\n                stopForeground(STOP_FOREGROUND_REMOVE)\n                stopSelf()\n                true\n            }\n            view.setOnClickListener {
+            view.setOnLongClickListener {
+                removeIsland()
+                stopForeground(STOP_FOREGROUND_REMOVE)
+                stopSelf()
+                true
+            }
+            view.setOnClickListener {
                 if (expanded) {
                     expanded = false
                     animateSize(false)
