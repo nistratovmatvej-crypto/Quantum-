@@ -2,7 +2,7 @@ name: Android build and tests
 
 on:
   push:
-    branches: [main, alpha-0.1.1-build-repair, design/quantum-ios-inspired, alpha-0.2-microphone-onboarding, design/quantum-premium-2026]
+    branches: [main, alpha-0.1.1-build-repair, design/quantum-ios-inspired, alpha-0.2-microphone-onboarding, design/quantum-premium-2026, feature/quantum-fluid-island]
   pull_request:
   workflow_dispatch:
 
