@@ -12,6 +12,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawingPadding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
@@ -67,7 +68,7 @@ fun SettingsScreen(repo: SettingsRepository, settings: AssistantSettings, onBack
                 Text("Settings", style = MaterialTheme.typography.headlineSmall, color = QuantumColors.Porcelain, fontWeight = FontWeight.SemiBold)
                 Text("Make Quantum yours", style = MaterialTheme.typography.bodySmall, color = QuantumColors.TextMuted)
             }
-            QuantumStar(Modifier.padding(end = 8.dp).then(Modifier), glow = false)
+            QuantumStar(Modifier.size(34.dp).padding(end = 8.dp), glow = false)
         }
 
         SettingsCard {
