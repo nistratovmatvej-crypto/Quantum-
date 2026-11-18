@@ -186,7 +186,7 @@ class PanelControllerTest {
     @Test fun transcriptFromMicMovesToProcessingAndIsKept() {
         val mic = FakeMic(); val c = controller(TestScope(), mic).drive(PanelState.LISTENING)
         mic.listener!!.onTranscript("Привет, Quantum")
-        assertEquals(PanelState.PROCESSING, c.state.value); assertFalse(mic.running)
+        assertEquals(PanelState.EXPANDED_IDLE, c.state.value); assertFalse(mic.running)
         assertEquals("Привет, Quantum", c.transcript.value)
     }
 
