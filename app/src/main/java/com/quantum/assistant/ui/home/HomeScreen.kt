@@ -27,7 +27,6 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Settings
-import androidx.compose.material.icons.outlined.Tune
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
@@ -35,6 +34,7 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -91,8 +91,8 @@ fun HomeScreen(
                     Text("QUANTUM", style = MaterialTheme.typography.labelLarge, color = QuantumColors.AccentBright, fontWeight = FontWeight.Bold)
                     Text(profileName ?: settings.displayName, style = MaterialTheme.typography.titleMedium, color = QuantumColors.Porcelain)
                 }
-                IconButton(onClick = onOpenPlans) {
-                    Icon(Icons.Outlined.Tune, contentDescription = "Модели и тариф", tint = QuantumColors.TextMuted)
+                TextButton(onClick = onOpenPlans) {
+                    Text("Модели", color = QuantumColors.AccentBright, style = MaterialTheme.typography.labelLarge)
                 }
                 IconButton(onClick = onOpenSettings) {
                     Icon(Icons.Outlined.Settings, contentDescription = "Настройки", tint = QuantumColors.Porcelain)
