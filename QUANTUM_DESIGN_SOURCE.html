@@ -1,0 +1,1162 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Quantum — Premium Design Source</title>
+<style>
+:root{color-scheme:dark;--bg:#071522;--panel:#0b1e2d;--surface:#102638;--raised:#163449;--line:#244354;--text:#f4f3ef;--muted:#91a8b5;--cyan:#079fc0;--bright:#35bbd5}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--text);font:15px/1.6 Inter,ui-sans-serif,system-ui,-apple-system,"Segoe UI",sans-serif}
+header{padding:44px max(24px,calc((100% - 1120px)/2));background:radial-gradient(ellipse at 50% -20%,#0e5268 0%,var(--bg) 62%);border-bottom:1px solid var(--line)}
+.brand{display:flex;align-items:center;gap:13px;color:var(--bright);font-weight:750;letter-spacing:.16em;font-size:12px}
+.mark{width:42px;height:42px;border-radius:50%;border:7px solid var(--text);background:var(--cyan);position:relative;display:grid;place-items:center}
+.mark:after{content:"";width:10px;height:10px;background:var(--text);border-radius:50%}
+h1{font-size:clamp(34px,6vw,64px);line-height:1.03;letter-spacing:-.055em;margin:35px 0 12px;max-width:800px}
+.lead{color:var(--muted);font-size:17px;max-width:660px}
+.wrap{max-width:1120px;margin:auto;padding:28px 24px 80px}
+nav{display:flex;gap:9px;flex-wrap:wrap;margin:0 0 28px}
+nav a,.chip{border:1px solid var(--line);border-radius:30px;padding:8px 13px;color:var(--muted);text-decoration:none;font-size:12px}
+h2{font-size:24px;letter-spacing:-.03em;margin:42px 0 16px}
+h3{font-size:17px;margin:0 0 8px}
+.muted{color:var(--muted)}.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:14px}
+.card{background:linear-gradient(145deg,var(--surface),var(--panel));border:1px solid var(--line);border-radius:26px;padding:20px}
+.preview{min-height:210px;display:flex;flex-direction:column;justify-content:space-between}
+.button{border:0;border-radius:24px;background:var(--bright);color:#061824;padding:12px 18px;font-weight:700;cursor:pointer}
+.button.secondary{background:var(--raised);color:var(--text);border:1px solid var(--line)}
+.hero{min-height:320px;align-items:center;text-align:center;background:radial-gradient(circle at 50% 32%,#0d4054,var(--panel) 62%)}
+.bigmark{width:148px;height:148px;border:20px solid var(--text);background:var(--cyan);border-radius:50%;display:grid;place-items:center;margin:10px auto 20px}
+.bigmark:after{content:"";width:34px;height:34px;border-radius:50%;background:var(--text)}
+.pill{display:inline-flex;align-items:center;gap:10px;padding:10px 15px;border-radius:30px;background:#0b1e2d;border:1px solid var(--line)}
+.dot{width:8px;height:8px;border-radius:50%;background:var(--bright)}
+.input{background:#0b1e2d;border:1px solid var(--line);border-radius:14px;padding:12px;color:var(--text);width:100%}
+.row{display:flex;justify-content:space-between;gap:12px;align-items:center;padding:10px 0;border-bottom:1px solid #24435488}
+.source{margin:12px 0;background:var(--panel);border:1px solid var(--line);border-radius:16px;overflow:hidden}
+.source summary{cursor:pointer;padding:14px 16px;color:var(--bright);font:13px ui-monospace,monospace;overflow-wrap:anywhere}
+pre{margin:0;padding:16px;overflow:auto;max-height:560px;border-top:1px solid var(--line);font:12px/1.55 ui-monospace,SFMono-Regular,Consolas,monospace;color:#d8e5e9;white-space:pre}
+.badge{color:var(--bright);font-size:11px;letter-spacing:.12em;font-weight:700}
+.tabs{display:flex;gap:8px;flex-wrap:wrap;margin:14px 0}.tabs button{border:1px solid var(--line);background:var(--panel);color:var(--muted);border-radius:20px;padding:9px 13px;cursor:pointer}.tabs button[aria-pressed=true]{background:var(--bright);color:#061824}
+#island{transition:all .24s ease;min-height:74px;display:flex;align-items:center;gap:12px;border-radius:36px;background:#081a28;border:1px solid var(--line);padding:10px 15px}
+#island .mark{width:36px;height:36px;border-width:6px;flex:none}#islandText{font-size:13px;color:var(--muted)}
+@media(max-width:600px){header{padding:30px 22px}.wrap{padding:20px 16px 60px}.card{border-radius:22px}}
+</style></head>
+<body>
+<header><div class="brand"><div class="mark"></div> QUANTUM / ATLANTIC</div><h1>A quieter kind of intelligence.</h1><p class="lead">Premium native Android interface direction for Quantum Alpha. This handoff contains interactive visual previews and the real Kotlin source files used by the implementation.</p></header>
+<main class="wrap">
+<nav><a href="#system">Design system</a><a href="#screens">Screen previews</a><a href="#island-section">Dynamic Island</a><a href="#implementation">Implementation source</a><a href="#status">Implementation status</a></nav>
+<section id="system"><h2>Design system</h2><div class="grid">
+<div class="card"><span class="badge">COLOR</span><h3>Quantum Atlantic</h3><div class="row"><span>Ink</span><code>#071522</code></div><div class="row"><span>Surface</span><code>#102638</code></div><div class="row"><span>Quantum cyan</span><code>#079FC0</code></div><div class="row"><span>Bright cyan</span><code>#35BBD5</code></div><div class="row"><span>Porcelain</span><code>#F4F3EF</code></div><div class="row"><span>Muted</span><code>#91A8B5</code></div></div>
+<div class="card"><span class="badge">TYPE</span><h3>Clear hierarchy</h3><div style="font-size:32px;font-weight:650;letter-spacing:-1px">Display</div><div style="font-size:21px;font-weight:600">Section title</div><div style="font-size:15px">Body text with comfortable reading rhythm.</div><div class="muted" style="font-size:11px;letter-spacing:.1em">LABEL / 11–13 SP</div></div>
+<div class="card"><span class="badge">SHAPE & SPACING</span><h3>Soft geometry</h3><div style="display:flex;gap:10px;align-items:end;margin:22px 0"><div style="width:42px;height:42px;border-radius:12px;background:var(--raised)"></div><div style="width:58px;height:58px;border-radius:20px;background:var(--raised)"></div><div style="width:78px;height:68px;border-radius:28px;background:var(--raised)"></div></div><p class="muted">4dp rhythm · 20–24dp screen insets · 22–28dp cards · 48dp touch targets.</p></div>
+</div></section>
+<section id="screens"><h2>Screen previews</h2><p class="muted">These are browser-based visual previews of the native screen direction, not device screenshots. The Kotlin implementation is embedded below.</p>
+<div class="grid">
+<div class="card preview"><div><span class="badge">01 / ONBOARDING</span><div class="bigmark"></div><h3>Технологии ближе.</h3><p class="muted">Персональный помощник, который включается только тогда, когда ты этого хочешь.</p></div><input class="input" placeholder="Имя или псевдоним"><button class="button" style="margin-top:12px">Продолжить</button></div>
+<div class="card preview hero"><div><span class="badge">02 / HOME</span><div class="bigmark"></div><h3>Я готов</h3><p class="muted">Твой личный помощник — в одном касании.</p><div class="pill"><span class="dot"></span> ОЖИДАНИЕ КОМАНДЫ</div></div><span class="muted">ALPHA 0.2 · In-app assistant</span></div>
+<div class="card preview"><div><span class="badge">03 / SETTINGS</span><h3>Настройки</h3><p class="muted">Настрой Quantum под себя</p><div class="row"><span>Профиль</span><span class="muted">›</span></div><div class="row"><span>Голос</span><span class="muted">1.0×</span></div><div class="row"><span>Память</span><span class="muted">Off</span></div><div class="row"><span>Конфиденциальность</span><span class="muted">›</span></div></div><span class="muted">Локальные настройки сохраняются.</span></div>
+<div class="card preview"><div><span class="badge">04 / MODELS</span><h3>Quantum Comet</h3><p class="muted">Сбалансированный профиль</p><div class="pill"><span class="dot"></span> ВЫБРАНО</div><p class="muted">Модель пока недоступна для загрузки. Выбор сохраняет только предпочтение.</p></div><button class="button secondary">Автоматический выбор</button></div>
+<div class="card preview"><div><span class="badge">05 / SUPERNOVA PRO</span><h3>Quantum Pro</h3><p class="muted">Будущий расширенный план для облачных возможностей.</p><div class="row"><span>Бесплатная версия</span><span>Доступна</span></div><div class="row"><span>Месячный план</span><span class="muted">Скоро</span></div><div class="row"><span>Годовой план</span><span class="muted">Скоро</span></div></div><p class="muted">Billing не подключён. Покупки отключены.</p></div>
+<div class="card preview"><div><span class="badge">06 / LOGIN STATUS</span><h3>Аккаунт</h3><p class="muted">В Alpha 0.2 доступен локальный профиль. Реальная регистрация, вход и восстановление пароля требуют backend и не имитируются.</p></div><span class="chip">AUTH NOT CONNECTED</span></div>
+</div></section>
+<section id="island-section"><h2>Dynamic Island states</h2><p class="muted">Tap a state below to inspect the intended in-app assistant behavior. Microphone activation remains a separate explicit action.</p>
+<div class="tabs" id="stateTabs"><button data-state="collapsed" aria-pressed="true">Collapsed</button><button data-state="expanded">Expanded</button><button data-state="listening">Listening</button><button data-state="processing">Processing</button><button data-state="speaking">Speaking</button><button data-state="confirm">Confirmation</button><button data-state="error">Error</button></div>
+<div id="island"><div class="mark"></div><div><strong id="islandTitle">Quantum</strong><div id="islandText">Коснись, чтобы открыть панель.</div></div><button id="islandAction" class="button secondary" style="margin-left:auto">Открыть</button></div>
+</section>
+<section id="implementation"><h2>Native implementation source</h2><p class="muted">The following sections contain the actual project files, with original repository paths preserved. This document is a handoff viewer; the Android app remains native Compose and does not use a WebView.</p><details class="source" open><summary>app/src/main/java/com/quantum/assistant/ui/theme/Theme.kt</summary><pre><code>package com.quantum.assistant.ui.theme
+
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Shapes
+import androidx.compose.material3.Typography
+import androidx.compose.material3.darkColorScheme
+import androidx.compose.runtime.Composable
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+
+/** Quantum Atlantic — restrained cyan, warm porcelain and deep ink. */
+object QuantumColors {
+    val Background = Color(0xFF071522)
+    val BackgroundElevated = Color(0xFF0B1E2D)
+    val Surface = Color(0xFF102638)
+    val SurfaceRaised = Color(0xFF163449)
+    val SurfaceSoft = Color(0xFF0D2435)
+    val Outline = Color(0xFF244354)
+    val Accent = Color(0xFF079FC0)
+    val AccentDeep = Color(0xFF078EAE)
+    val AccentBright = Color(0xFF35BBD5)
+    val Porcelain = Color(0xFFF4F3EF)
+    val TextMuted = Color(0xFF91A8B5)
+    val Success = Color(0xFF72D6B2)
+    val Warning = Color(0xFFFFC477)
+    val Danger = Color(0xFFFF7D86)
+    val Navy = Background
+    val NavySurface = Surface
+    val NavyOutline = Outline
+    val Cyan = AccentBright
+    val StarWhite = Porcelain
+}
+private val Scheme = darkColorScheme(
+    primary = QuantumColors.AccentBright, onPrimary = QuantumColors.Background,
+    secondary = QuantumColors.Accent, onSecondary = QuantumColors.Porcelain,
+    background = QuantumColors.Background, onBackground = QuantumColors.Porcelain,
+    surface = QuantumColors.Surface, onSurface = QuantumColors.Porcelain,
+    surfaceVariant = QuantumColors.SurfaceRaised, onSurfaceVariant = QuantumColors.TextMuted,
+    outline = QuantumColors.Outline, error = QuantumColors.Danger
+)
+private val QuantumTypography = Typography().run {
+    copy(
+        displayLarge = displayLarge.copy(fontSize = 42.sp, lineHeight = 48.sp, fontWeight = FontWeight.SemiBold, letterSpacing = (-1.4).sp),
+        headlineLarge = headlineLarge.copy(fontSize = 32.sp, lineHeight = 38.sp, fontWeight = FontWeight.SemiBold, letterSpacing = (-0.7).sp),
+        headlineMedium = headlineMedium.copy(fontSize = 27.sp, lineHeight = 33.sp, fontWeight = FontWeight.SemiBold, letterSpacing = (-0.4).sp),
+        titleLarge = titleLarge.copy(fontSize = 20.sp, lineHeight = 26.sp, fontWeight = FontWeight.SemiBold),
+        titleMedium = titleMedium.copy(fontSize = 16.sp, lineHeight = 22.sp, fontWeight = FontWeight.Medium),
+        bodyLarge = bodyLarge.copy(fontSize = 16.sp, lineHeight = 24.sp),
+        bodyMedium = bodyMedium.copy(fontSize = 14.sp, lineHeight = 21.sp),
+        bodySmall = bodySmall.copy(fontSize = 12.sp, lineHeight = 18.sp),
+        labelLarge = labelLarge.copy(fontSize = 13.sp, lineHeight = 18.sp, fontWeight = FontWeight.SemiBold),
+        labelMedium = labelMedium.copy(fontSize = 11.sp, lineHeight = 15.sp, fontWeight = FontWeight.SemiBold, letterSpacing = 0.7.sp)
+    )
+}
+@Composable
+fun QuantumTheme(content: @Composable () -&gt; Unit) {
+    MaterialTheme(
+        colorScheme = Scheme, typography = QuantumTypography,
+        shapes = Shapes(
+            extraSmall = androidx.compose.foundation.shape.RoundedCornerShape(10.dp),
+            small = androidx.compose.foundation.shape.RoundedCornerShape(14.dp),
+            medium = androidx.compose.foundation.shape.RoundedCornerShape(20.dp),
+            large = androidx.compose.foundation.shape.RoundedCornerShape(28.dp),
+            extraLarge = androidx.compose.foundation.shape.RoundedCornerShape(34.dp)
+        ), content = content
+    )
+}
+</code></pre></details>
+<details class="source" open><summary>app/src/main/java/com/quantum/assistant/ui/QuantumStar.kt</summary><pre><code>package com.quantum.assistant.ui
+
+import androidx.compose.foundation.Canvas
+import androidx.compose.ui.Modifier
+import androidx.compose.runtime.Composable
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.drawscope.Stroke
+import com.quantum.assistant.ui.theme.QuantumColors
+
+/** Geometric concentric Quantum mark. Drawn natively for crisp adaptive sizing. */
+@Composable
+fun QuantumStar(modifier: Modifier = Modifier, glow: Boolean = false) {
+    Canvas(modifier) {
+        val c = center
+        val r = size.minDimension * .46f
+        if (glow) drawCircle(
+            brush = Brush.radialGradient(
+                listOf(QuantumColors.Accent.copy(alpha = .22f), Color.Transparent),
+                center = c, radius = r * 1.55f
+            ), radius = r * 1.55f, center = c
+        )
+        drawCircle(QuantumColors.Porcelain, r, c)
+        drawCircle(
+            brush = Brush.linearGradient(
+                listOf(QuantumColors.AccentBright, QuantumColors.AccentDeep),
+                start = Offset(c.x - r, c.y - r), end = Offset(c.x + r, c.y + r)
+            ), r * .62f, c
+        )
+        drawCircle(QuantumColors.Porcelain, r * .19f, c)
+        drawCircle(Color.White.copy(alpha = .18f), r * .985f, c,
+            style = Stroke(width = (r * .012f).coerceAtLeast(1f)))
+    }
+}
+</code></pre></details>
+<details class="source" open><summary>app/src/main/java/com/quantum/assistant/ui/home/HomeScreen.kt</summary><pre><code>package com.quantum.assistant.ui.home
+
+import android.Manifest
+import android.content.pm.PackageManager
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.togetherWith
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.safeDrawingPadding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.Settings
+import androidx.compose.material.icons.outlined.Tune
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.dp
+import androidx.core.content.ContextCompat
+import com.quantum.assistant.data.AssistantSettings
+import com.quantum.assistant.floating.FloatingAssistant
+import com.quantum.assistant.floating.PanelActions
+import com.quantum.assistant.floating.PanelState
+import com.quantum.assistant.ui.QuantumStar
+import com.quantum.assistant.ui.theme.QuantumColors
+
+@Composable
+fun HomeScreen(
+    vm: HomeViewModel,
+    settings: AssistantSettings,
+    profileName: String?,
+    onOpenSettings: () -&gt; Unit,
+    onOpenPlans: () -&gt; Unit
+) {
+    val context = LocalContext.current
+    val state by vm.panel.state.collectAsState()
+    val seconds by vm.panel.secondsLeft.collectAsState()
+    val errorMessage by vm.panel.errorMessage.collectAsState()
+    val transcript by vm.panel.transcript.collectAsState()
+    val live = vm.panel.isCaptureLive
+
+    val micPermission = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { granted -&gt;
+        if (granted) vm.panel.onMicTap()
+        else vm.panel.onFailure("Без разрешения Android не может использовать микрофон.")
+    }
+    val actions = remember(vm, micPermission) {
+        PanelActions.from(vm.panel) {
+            val granted = ContextCompat.checkSelfPermission(context, Manifest.permission.RECORD_AUDIO) == PackageManager.PERMISSION_GRANTED
+            if (granted) vm.panel.onMicTap() else micPermission.launch(Manifest.permission.RECORD_AUDIO)
+        }
+    }
+
+    Box(Modifier.fillMaxSize().background(QuantumColors.Background).safeDrawingPadding()) {
+        Column(
+            Modifier.fillMaxSize().verticalScroll(rememberScrollState())
+                .padding(horizontal = 24.dp).padding(top = 82.dp, bottom = 140.dp)
+        ) {
+            Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                QuantumStar(Modifier.size(34.dp))
+                Spacer(Modifier.width(11.dp))
+                Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(1.dp)) {
+                    Text("QUANTUM", style = MaterialTheme.typography.labelLarge, color = QuantumColors.AccentBright, fontWeight = FontWeight.Bold)
+                    Text(profileName ?: settings.displayName, style = MaterialTheme.typography.titleMedium, color = QuantumColors.Porcelain)
+                }
+                IconButton(onClick = onOpenPlans) {
+                    Icon(Icons.Outlined.Tune, contentDescription = "Модели и тариф", tint = QuantumColors.TextMuted)
+                }
+                IconButton(onClick = onOpenSettings) {
+                    Icon(Icons.Outlined.Settings, contentDescription = "Настройки", tint = QuantumColors.Porcelain)
+                }
+            }
+
+            Text(
+                "Технологии,\nкоторые слушают.",
+                style = MaterialTheme.typography.headlineLarge,
+                color = QuantumColors.Porcelain,
+                modifier = Modifier.padding(top = 38.dp)
+            )
+            Text(
+                "Твой личный помощник — в одном касании.",
+                style = MaterialTheme.typography.bodyLarge,
+                color = QuantumColors.TextMuted,
+                modifier = Modifier.padding(top = 10.dp)
+            )
+
+            Card(
+                Modifier.fillMaxWidth().padding(top = 30.dp),
+                shape = RoundedCornerShape(32.dp),
+                colors = CardDefaults.cardColors(containerColor = QuantumColors.BackgroundElevated)
+            ) {
+                Box(
+                    Modifier.fillMaxWidth()
+                        .background(Brush.verticalGradient(listOf(QuantumColors.SurfaceSoft, QuantumColors.BackgroundElevated)))
+                        .padding(horizontal = 22.dp, vertical = 30.dp),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                        Surface(
+                            modifier = Modifier.size(190.dp),
+                            shape = CircleShape,
+                            color = QuantumColors.Surface,
+                            tonalElevation = 0.dp,
+                            shadowElevation = 0.dp
+                        ) {
+                            Box(contentAlignment = Alignment.Center) {
+                                QuantumStar(Modifier.size(146.dp), glow = state == PanelState.LISTENING)
+                            }
+                        }
+                        AnimatedContent(
+                            targetState = state,
+                            transitionSpec = { fadeIn() togetherWith fadeOut() },
+                            label = "assistant-state"
+                        ) { current -&gt;
+                            Text(
+                                when (current) {
+                                    PanelState.LISTENING -&gt; "Я слушаю"
+                                    PanelState.PROCESSING -&gt; "Обрабатываю речь"
+                                    PanelState.SPEAKING -&gt; "Говорю"
+                                    PanelState.AWAITING_CONFIRMATION -&gt; "Жду подтверждения"
+                                    PanelState.ERROR -&gt; "Не удалось выполнить"
+                                    else -&gt; "Я готов"
+                                },
+                                style = MaterialTheme.typography.titleLarge,
+                                color = QuantumColors.Porcelain,
+                                modifier = Modifier.padding(top = 24.dp)
+                            )
+                        }
+                        Text(
+                            when (state) {
+                                PanelState.LISTENING -&gt; if (vm.panel.timeoutIsSilenceDetection) "Автоостановка при тишине · $seconds сек." else "Нажми на стоп, когда закончишь."
+                                PanelState.PROCESSING -&gt; "Распознаю сказанное устройством."
+                                PanelState.ERROR -&gt; errorMessage ?: "Проверь разрешение микрофона."
+                                else -&gt; "Коснись панели Quantum сверху, чтобы начать."
+                            },
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = QuantumColors.TextMuted,
+                            modifier = Modifier.padding(top = 7.dp)
+                        )
+                        Surface(
+                            modifier = Modifier.padding(top = 18.dp),
+                            shape = RoundedCornerShape(50.dp),
+                            color = QuantumColors.SurfaceRaised
+                        ) {
+                            Row(
+                                Modifier.padding(horizontal = 13.dp, vertical = 8.dp),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Box(
+                                    Modifier.size(7.dp).background(
+                                        if (state == PanelState.LISTENING &amp;&amp; live) QuantumColors.Success else QuantumColors.TextMuted,
+                                        CircleShape
+                                    )
+                                )
+                                Text(
+                                    if (state == PanelState.LISTENING &amp;&amp; live) "МИКРОФОН АКТИВЕН" else "ОЖИДАНИЕ КОМАНДЫ",
+                                    style = MaterialTheme.typography.labelMedium,
+                                    color = if (state == PanelState.LISTENING &amp;&amp; live) QuantumColors.Success else QuantumColors.TextMuted,
+                                    modifier = Modifier.padding(start = 8.dp)
+                                )
+                            }
+                        }
+                    }
+                }
+            }
+
+            Row(
+                Modifier.fillMaxWidth().padding(top = 30.dp, bottom = 12.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text("СОСТОЯНИЕ", style = MaterialTheme.typography.labelMedium, color = QuantumColors.TextMuted)
+                Spacer(Modifier.weight(1f))
+                Text("ALPHA 0.2", style = MaterialTheme.typography.labelMedium, color = QuantumColors.AccentBright)
+            }
+            Column(verticalArrangement = Arrangement.spacedBy(1.dp)) {
+                StatusLine("Распознавание речи", if (live) "Активно" else "Ожидает запуска", live)
+                StatusLine("Облачный интеллект", "Не подключён", false)
+                StatusLine("Локальная модель", "Не установлена", false)
+            }
+
+            if (!transcript.isNullOrBlank()) {
+                Card(
+                    Modifier.fillMaxWidth().padding(top = 22.dp),
+                    shape = RoundedCornerShape(24.dp),
+                    colors = CardDefaults.cardColors(containerColor = QuantumColors.Surface)
+                ) {
+                    Column(Modifier.padding(18.dp)) {
+                        Text("ПОСЛЕДНЯЯ ФРАЗА", style = MaterialTheme.typography.labelMedium, color = QuantumColors.AccentBright)
+                        Text(transcript!!, style = MaterialTheme.typography.bodyLarge, color = QuantumColors.Porcelain, modifier = Modifier.padding(top = 9.dp))
+                        Text("Это распознанный текст. Ответы ИИ пока не подключены.", style = MaterialTheme.typography.bodySmall, color = QuantumColors.TextMuted, modifier = Modifier.padding(top = 8.dp))
+                    }
+                }
+            }
+            Text(
+                "Quantum работает только после твоего действия. Фоновое прослушивание выключено.",
+                style = MaterialTheme.typography.bodySmall,
+                color = QuantumColors.TextMuted,
+                modifier = Modifier.padding(top = 24.dp, bottom = 16.dp)
+            )
+        }
+
+        FloatingAssistant(
+            state = state, secondsLeft = seconds, captureLive = live,
+            timeoutIsSilenceDetection = vm.panel.timeoutIsSilenceDetection,
+            errorMessage = errorMessage, actions = actions,
+            modifier = Modifier.align(Alignment.TopCenter).padding(top = 8.dp)
+        )
+    }
+}
+
+@Composable
+private fun StatusLine(label: String, value: String, active: Boolean) {
+    Row(
+        Modifier.fillMaxWidth().padding(vertical = 13.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Box(Modifier.size(7.dp).background(if (active) QuantumColors.Success else QuantumColors.Outline, CircleShape))
+        Text(label, Modifier.weight(1f).padding(start = 12.dp), style = MaterialTheme.typography.bodyMedium, color = QuantumColors.Porcelain)
+        Text(value, style = MaterialTheme.typography.bodySmall, color = if (active) QuantumColors.Success else QuantumColors.TextMuted)
+    }
+}
+</code></pre></details>
+<details class="source" open><summary>app/src/main/java/com/quantum/assistant/floating/FloatingAssistant.kt</summary><pre><code>package com.quantum.assistant.floating
+
+import androidx.compose.animation.animateContentSize
+import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.RepeatMode
+import androidx.compose.animation.core.animateFloat
+import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.rememberInfiniteTransition
+import androidx.compose.animation.core.spring
+import androidx.compose.animation.core.tween
+import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.widthIn
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Close
+import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.scale
+import androidx.compose.ui.geometry.CornerRadius
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.StrokeCap
+import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.LiveRegionMode
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.liveRegion
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.unit.dp
+import com.quantum.assistant.ui.QuantumStar
+import com.quantum.assistant.ui.theme.QuantumColors
+
+class PanelActions(
+    val onStarTap: () -&gt; Unit,
+    val onMicTap: () -&gt; Unit,
+    val onStopListening: () -&gt; Unit,
+    val onClose: () -&gt; Unit,
+    val onApprove: () -&gt; Unit,
+    val onReject: () -&gt; Unit,
+    val onSpeakingFinished: () -&gt; Unit,
+    val onDismissError: () -&gt; Unit
+) {
+    companion object {
+        fun from(c: PanelController, onMicTap: () -&gt; Unit = { c.onMicTap() }) = PanelActions(
+            { c.onStarTap() }, onMicTap, { c.onStopListening() }, { c.onClose() },
+            { c.onApprove(speak = false) }, { c.onReject() }, { c.onSpeakingFinished() }, { c.onDismissError() }
+        )
+    }
+}
+
+@Composable
+fun FloatingAssistant(
+    state: PanelState,
+    secondsLeft: Int,
+    captureLive: Boolean,
+    timeoutIsSilenceDetection: Boolean,
+    errorMessage: String?,
+    actions: PanelActions,
+    modifier: Modifier = Modifier
+) {
+    val expanded = state != PanelState.COLLAPSED
+    val listening = state == PanelState.LISTENING
+    val shape = RoundedCornerShape(34.dp)
+
+    Row(
+        modifier = modifier.animateContentSize(spring(dampingRatio = 0.85f, stiffness = 400f))
+            .background(QuantumColors.BackgroundElevated, shape)
+            .border(1.dp, if (listening) QuantumColors.AccentBright else QuantumColors.Outline, shape)
+            .padding(4.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(4.dp)
+    ) {
+        Box(
+            Modifier.size(60.dp).clickable(enabled = !expanded, role = Role.Button, onClick = actions.onStarTap)
+                .semantics { contentDescription = if (expanded) "Quantum" else "Открыть Quantum" },
+            contentAlignment = Alignment.Center
+        ) { QuantumStar(Modifier.size(48.dp), glow = !expanded) }
+
+        if (expanded) {
+            val (title, detail) = when (state) {
+                PanelState.EXPANDED_IDLE -&gt; "Готов к работе" to "Нажми на микрофон, чтобы начать."
+                PanelState.LISTENING -&gt; if (timeoutIsSilenceDetection) {
+                    "Слушаю тебя" to "Остановка при тишине: $secondsLeft сек."
+                } else "Слушаю" to "Нажми стоп, когда закончишь."
+                PanelState.PROCESSING -&gt; "Обрабатываю" to "Распознаю речь."
+                PanelState.AWAITING_CONFIRMATION -&gt; "Нужно подтверждение" to "Ничего не выполнится без тебя."
+                PanelState.SPEAKING -&gt; "Говорю" to ""
+                PanelState.ERROR -&gt; "Не удалось запустить" to (errorMessage ?: "Проверь разрешение микрофона.")
+                PanelState.COLLAPSED -&gt; "" to ""
+            }
+            Column(
+                Modifier.widthIn(min = 126.dp, max = 196.dp).padding(horizontal = 4.dp)
+                    .semantics { liveRegion = LiveRegionMode.Polite }
+            ) {
+                Text(title, style = MaterialTheme.typography.labelLarge, color = if (listening) QuantumColors.AccentBright else QuantumColors.Porcelain)
+                if (detail.isNotEmpty()) Text(detail, style = MaterialTheme.typography.bodySmall, color = QuantumColors.TextMuted)
+                when (state) {
+                    PanelState.AWAITING_CONFIRMATION -&gt; Row {
+                        TextButton(onClick = actions.onApprove) { Text("Да") }
+                        TextButton(onClick = actions.onReject) { Text("Нет") }
+                    }
+                    PanelState.SPEAKING -&gt; TextButton(onClick = actions.onSpeakingFinished) { Text("Стоп") }
+                    PanelState.ERROR -&gt; TextButton(onClick = actions.onDismissError) { Text("Понятно") }
+                    else -&gt; Unit
+                }
+            }
+            if (state == PanelState.EXPANDED_IDLE || listening) {
+                MicButton(listening, if (listening) actions.onStopListening else actions.onMicTap)
+            }
+            Box(
+                Modifier.size(46.dp).clickable(role = Role.Button, onClick = actions.onClose)
+                    .semantics { contentDescription = "Закрыть панель" },
+                contentAlignment = Alignment.Center
+            ) { Icon(Icons.Default.Close, null, tint = QuantumColors.TextMuted) }
+        }
+    }
+}
+
+@Composable
+private fun MicButton(listening: Boolean, onClick: () -&gt; Unit) {
+    val pulse by rememberInfiniteTransition(label = "pulse").animateFloat(
+        initialValue = 1f, targetValue = 1.22f,
+        animationSpec = infiniteRepeatable(tween(900, easing = FastOutSlowInEasing), RepeatMode.Reverse),
+        label = "pulse"
+    )
+    Box(
+        Modifier.size(54.dp).clickable(role = Role.Button, onClick = onClick)
+            .semantics { contentDescription = if (listening) "Остановить запись" else "Включить микрофон" },
+        contentAlignment = Alignment.Center
+    ) {
+        if (listening) Box(Modifier.size(42.dp).scale(pulse).background(QuantumColors.Accent.copy(alpha = 0.25f), CircleShape))
+        Box(
+            Modifier.size(42.dp).background(if (listening) QuantumColors.AccentBright else QuantumColors.SurfaceRaised, CircleShape),
+            contentAlignment = Alignment.Center
+        ) {
+            val ink = if (listening) QuantumColors.Background else QuantumColors.Porcelain
+            Canvas(Modifier.size(22.dp)) {
+                if (listening) {
+                    drawRoundRect(ink, Offset(size.width * 0.2f, size.height * 0.2f), Size(size.width * 0.6f, size.height * 0.6f), CornerRadius(4f))
+                } else {
+                    val w = size.width
+                    drawRoundRect(ink, Offset(w * 0.35f, 0f), Size(w * 0.3f, w * 0.55f), CornerRadius(w * 0.15f))
+                    drawArc(ink, 0f, 180f, false, Offset(w * 0.2f, w * 0.2f), Size(w * 0.6f, w * 0.5f), style = Stroke(2.5f, cap = StrokeCap.Round))
+                    drawLine(ink, Offset(w * 0.5f, w * 0.7f), Offset(w * 0.5f, w * 0.95f), 2.5f, StrokeCap.Round)
+                }
+            }
+        }
+    }
+}
+</code></pre></details>
+<details class="source" open><summary>app/src/main/java/com/quantum/assistant/ui/settings/SettingsScreen.kt</summary><pre><code>package com.quantum.assistant.ui.settings
+
+import android.content.Intent
+import android.net.Uri
+import android.provider.Settings
+import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.safeDrawingPadding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.outlined.Lock
+import androidx.compose.material.icons.outlined.Memory
+import androidx.compose.material.icons.outlined.Person
+import androidx.compose.material.icons.outlined.RecordVoiceOver
+import androidx.compose.material.icons.outlined.Tune
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.RadioButton
+import androidx.compose.material3.Slider
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.dp
+import com.quantum.assistant.BuildConfig
+import com.quantum.assistant.data.AssistantSettings
+import com.quantum.assistant.data.MemoryMode
+import com.quantum.assistant.data.SettingsRepository
+import com.quantum.assistant.device.DeviceSnapshotReader
+import com.quantum.assistant.device.ThresholdCapabilityAssessor
+import com.quantum.assistant.ui.QuantumStar
+import com.quantum.assistant.ui.theme.QuantumColors
+import java.util.Locale
+
+@Composable
+fun SettingsScreen(repo: SettingsRepository, settings: AssistantSettings, onBack: () -&gt; Unit) {
+    val context = LocalContext.current
+    val device = remember { DeviceSnapshotReader.read(context) }
+    val assessment = remember(device) { ThresholdCapabilityAssessor().assess(device) }
+
+    Column(
+        Modifier.fillMaxSize().background(QuantumColors.Background).safeDrawingPadding()
+            .verticalScroll(rememberScrollState()).padding(horizontal = 22.dp),
+        verticalArrangement = Arrangement.spacedBy(16.dp)
+    ) {
+        Row(Modifier.fillMaxWidth().padding(top = 8.dp, bottom = 4.dp), verticalAlignment = Alignment.CenterVertically) {
+            IconButton(onClick = onBack) {
+                Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back", tint = QuantumColors.Porcelain)
+            }
+            Column(Modifier.weight(1f)) {
+                Text("Настройки", style = MaterialTheme.typography.headlineMedium, color = QuantumColors.Porcelain)
+                Text("Настрой Quantum под себя", style = MaterialTheme.typography.bodySmall, color = QuantumColors.TextMuted)
+            }
+            QuantumStar(Modifier.size(30.dp))
+        }
+
+        SettingsGroup("ПРОФИЛЬ", Icons.Outlined.Person) {
+            Text("Имя помощника", style = MaterialTheme.typography.bodySmall, color = QuantumColors.TextMuted)
+            OutlinedTextField(
+                value = settings.assistantName, onValueChange = repo::setAssistantName,
+                singleLine = true, modifier = Modifier.fillMaxWidth(),
+                placeholder = { Text("Quantum") }
+            )
+            Text("Профиль хранится только на этом устройстве. Сетевой аккаунт не подключён.", style = MaterialTheme.typography.bodySmall, color = QuantumColors.TextMuted)
+        }
+
+        SettingsGroup("ГОЛОС", Icons.Outlined.RecordVoiceOver) {
+            Text("Скорость речи · " + String.format(Locale.US, "%.1fx", settings.speechSpeed), style = MaterialTheme.typography.bodyLarge, color = QuantumColors.Porcelain)
+            Slider(value = settings.speechSpeed, onValueChange = { repo.setSpeechSpeed(Math.round(it * 10) / 10f) }, valueRange = 0.5f..2.0f, steps = 14)
+            Text("Настройка сохранена. Применение станет доступно после подключения синтеза речи.", style = MaterialTheme.typography.bodySmall, color = QuantumColors.TextMuted)
+        }
+
+        SettingsGroup("ПАМЯТЬ", Icons.Outlined.Memory) {
+            MemoryMode.entries.forEach { mode -&gt;
+                Row(
+                    Modifier.fillMaxWidth().clickable(role = Role.RadioButton) { repo.setMemoryMode(mode) }.padding(vertical = 6.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    RadioButton(selected = settings.memoryMode == mode, onClick = null)
+                    Column(Modifier.padding(start = 10.dp)) {
+                        Text(mode.label, color = QuantumColors.Porcelain, fontWeight = FontWeight.Medium)
+                        Text(mode.description, style = MaterialTheme.typography.bodySmall, color = QuantumColors.TextMuted)
+                    }
+                }
+            }
+            Text("Сейчас сохраняется только выбор режима. Сама память ещё не подключена.", style = MaterialTheme.typography.bodySmall, color = QuantumColors.Warning)
+        }
+
+        SettingsGroup("ИНТЕЛЛЕКТ НА УСТРОЙСТВЕ", Icons.Outlined.Tune) {
+            Text("Предпочитаемый уровень", style = MaterialTheme.typography.bodyLarge, color = QuantumColors.Porcelain)
+            TierRow("Автоматически", "Рекомендация: ${assessment.recommended?.label ?: "нет данных"}", settings.selectedTier == null) { repo.setSelectedTier(null) }
+            assessment.tiers.forEach { tier -&gt;
+                val detail = tier.verdict.label + if (tier.reasons.isEmpty()) "" else " · " + tier.reasons.joinToString("; ")
+                TierRow(tier.tier.label, detail, settings.selectedTier == tier.tier) { repo.setSelectedTier(tier.tier) }
+            }
+            Text(
+                "RAM: ${device.totalRamMb} MB · Android API ${device.sdkInt}. Уровни пока являются профилями выбора: модели не установлены.",
+                style = MaterialTheme.typography.bodySmall, color = QuantumColors.TextMuted
+            )
+        }
+
+        SettingsGroup("КОНФИДЕНЦИАЛЬНОСТЬ", Icons.Outlined.Lock) {
+            Text("Микрофон не работает в фоне. Разрешение запрашивается только при нажатии на кнопку микрофона.", style = MaterialTheme.typography.bodyMedium, color = QuantumColors.Porcelain)
+            Text(
+                "Управление разрешениями Android",
+                Modifier.fillMaxWidth().clickable {
+                    context.startActivity(Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS, Uri.fromParts("package", context.packageName, null)))
+                }.padding(vertical = 12.dp),
+                color = QuantumColors.AccentBright, fontWeight = FontWeight.SemiBold
+            )
+        }
+
+        SettingsGroup("О QUANTUM", null) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                QuantumStar(Modifier.size(42.dp))
+                Column(Modifier.padding(start = 12.dp)) {
+                    Text("Quantum", style = MaterialTheme.typography.titleLarge, color = QuantumColors.Porcelain)
+                    Text("Version ${BuildConfig.VERSION_NAME}", style = MaterialTheme.typography.bodySmall, color = QuantumColors.TextMuted)
+                }
+            }
+            Text("Cloud AI, локальные модели, TTS, напоминания и действия устройства пока не доступны.", style = MaterialTheme.typography.bodySmall, color = QuantumColors.TextMuted)
+        }
+        Text("Quantum Atlantic · Alpha", style = MaterialTheme.typography.labelSmall, color = QuantumColors.TextMuted, modifier = Modifier.padding(bottom = 26.dp))
+    }
+}
+
+@Composable
+private fun SettingsGroup(title: String, icon: androidx.compose.ui.graphics.vector.ImageVector?, content: @Composable () -&gt; Unit) {
+    Card(
+        Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(26.dp),
+        colors = CardDefaults.cardColors(containerColor = QuantumColors.Surface)
+    ) {
+        Column(Modifier.padding(18.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                if (icon != null) Icon(icon, contentDescription = null, tint = QuantumColors.AccentBright, modifier = Modifier.size(18.dp))
+                Text(title, style = MaterialTheme.typography.labelMedium, color = QuantumColors.AccentBright, modifier = Modifier.padding(start = if (icon == null) 0.dp else 9.dp))
+            }
+            content()
+        }
+    }
+}
+
+@Composable
+private fun TierRow(title: String, detail: String, selected: Boolean, onSelect: () -&gt; Unit) {
+    Row(
+        Modifier.fillMaxWidth().clickable(role = Role.RadioButton, onClick = onSelect).padding(vertical = 4.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        RadioButton(selected = selected, onClick = null)
+        Column(Modifier.padding(start = 10.dp)) {
+            Text(title, color = QuantumColors.Porcelain)
+            Text(detail, style = MaterialTheme.typography.bodySmall, color = QuantumColors.TextMuted)
+        }
+    }
+}
+</code></pre></details>
+<details class="source" open><summary>app/src/main/java/com/quantum/assistant/ui/plans/PlansScreen.kt</summary><pre><code>package com.quantum.assistant.ui.plans
+
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.safeDrawingPadding
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.RadioButton
+import androidx.compose.material3.Text
+import androidx.compose.material3.Button
+import androidx.compose.runtime.Composable
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.dp
+import com.quantum.assistant.device.LocalTier
+import com.quantum.assistant.ui.QuantumStar
+import com.quantum.assistant.ui.theme.QuantumColors
+
+@Composable
+fun PlansScreen(selectedTier: LocalTier?, onSelectTier: (LocalTier?) -&gt; Unit, onBack: () -&gt; Unit) {
+    Column(
+        Modifier.fillMaxSize().background(QuantumColors.Background).safeDrawingPadding()
+            .verticalScroll(rememberScrollState()).padding(horizontal = 22.dp),
+        verticalArrangement = Arrangement.spacedBy(14.dp)
+    ) {
+        Row(Modifier.fillMaxWidth().padding(top = 8.dp, bottom = 10.dp), verticalAlignment = Alignment.CenterVertically) {
+            IconButton(onClick = onBack) { Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Назад", tint = QuantumColors.Porcelain) }
+            Column(Modifier.weight(1f)) {
+                Text("Возможности", style = MaterialTheme.typography.headlineMedium, color = QuantumColors.Porcelain)
+                Text("Локальные модели и планы Quantum", style = MaterialTheme.typography.bodySmall, color = QuantumColors.TextMuted)
+            }
+            QuantumStar(Modifier.padding(end = 4.dp))
+        }
+
+        Text("ЛОКАЛЬНЫЕ МОДЕЛИ", style = MaterialTheme.typography.labelMedium, color = QuantumColors.AccentBright)
+        Text("Выбери профиль устройства", style = MaterialTheme.typography.titleLarge, color = QuantumColors.Porcelain)
+        TierCard("Quantum Meteor", "Лёгкий профиль", "Для устройств с ограниченными ресурсами. Меньше требований, но модели пока нет.", selectedTier == LocalTier.METEOR) { onSelectTier(LocalTier.METEOR) }
+        TierCard("Quantum Comet", "Сбалансированный профиль", "Компромисс ресурсов и качества. Реальная совместимость требует тестирования.", selectedTier == LocalTier.COMET) { onSelectTier(LocalTier.COMET) }
+        TierCard("Quantum Nova", "Продвинутый профиль", "Самый требовательный вариант. Модель не поставляется и пока недоступна для загрузки.", selectedTier == LocalTier.NOVA) { onSelectTier(LocalTier.NOVA) }
+        Button(onClick = { onSelectTier(null) }, modifier = Modifier.fillMaxWidth()) { Text("Автоматический выбор") }
+        Text("Все три варианта сейчас сохраняют только предпочтение. Файлы моделей и размеры загрузки ещё не опубликованы.", color = QuantumColors.TextMuted, style = MaterialTheme.typography.bodySmall)
+
+        Text("ПОДПИСКА", style = MaterialTheme.typography.labelMedium, color = QuantumColors.AccentBright, modifier = Modifier.padding(top = 18.dp))
+        Card(
+            Modifier.fillMaxWidth().border(1.dp, QuantumColors.Accent.copy(alpha = .55f), RoundedCornerShape(28.dp)),
+            shape = RoundedCornerShape(28.dp),
+            colors = CardDefaults.cardColors(containerColor = QuantumColors.BackgroundElevated)
+        ) {
+            Column(Modifier.padding(22.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                Text("SUPERNOVA", style = MaterialTheme.typography.labelMedium, color = QuantumColors.AccentBright)
+                Text("Quantum Pro", style = MaterialTheme.typography.headlineMedium, color = QuantumColors.Porcelain)
+                Text("Будущий расширенный план для облачных возможностей и дополнительных сервисов.", style = MaterialTheme.typography.bodyMedium, color = QuantumColors.TextMuted)
+                FeatureLine("Бесплатная версия", "Текущая базовая функциональность")
+                FeatureLine("Месячный план", "Цена ещё не задана")
+                FeatureLine("Годовой план", "Цена ещё не задана")
+                Text("Google Play Billing не подключён. Покупки, восстановление и статус подписки пока не работают.", style = MaterialTheme.typography.bodySmall, color = QuantumColors.Warning)
+                Text("Покупки появятся после подключения платёжной инфраструктуры.", style = MaterialTheme.typography.labelLarge, color = QuantumColors.TextMuted)
+            }
+        }
+        Text("Meteor / Comet / Nova — профили локальной модели, а не подписки. Supernova Pro — отдельный будущий тариф.", color = QuantumColors.TextMuted, style = MaterialTheme.typography.bodySmall, modifier = Modifier.padding(bottom = 28.dp))
+    }
+}
+
+@Composable
+private fun TierCard(title: String, subtitle: String, detail: String, selected: Boolean, onClick: () -&gt; Unit) {
+    Card(
+        Modifier.fillMaxWidth().border(1.dp, if (selected) QuantumColors.AccentBright else QuantumColors.Outline.copy(alpha = .55f), RoundedCornerShape(24.dp))
+            .clickable(role = Role.RadioButton, onClick = onClick),
+        shape = RoundedCornerShape(24.dp),
+        colors = CardDefaults.cardColors(containerColor = if (selected) QuantumColors.SurfaceRaised else QuantumColors.Surface)
+    ) {
+        Row(Modifier.padding(17.dp), verticalAlignment = Alignment.CenterVertically) {
+            RadioButton(selected = selected, onClick = null)
+            Column(Modifier.padding(start = 10.dp), verticalArrangement = Arrangement.spacedBy(5.dp)) {
+                Text(title, color = QuantumColors.Porcelain, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
+                Text(subtitle, color = QuantumColors.AccentBright, style = MaterialTheme.typography.labelMedium)
+                Text(detail, color = QuantumColors.TextMuted, style = MaterialTheme.typography.bodySmall)
+                Text("НЕ ДОСТУПНО ДЛЯ ЗАГРУЗКИ", color = QuantumColors.Warning, style = MaterialTheme.typography.labelSmall)
+            }
+        }
+    }
+}
+
+@Composable
+private fun FeatureLine(label: String, value: String) {
+    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
+        Text(label, color = QuantumColors.Porcelain, style = MaterialTheme.typography.bodyMedium)
+        Text(value, color = QuantumColors.TextMuted, style = MaterialTheme.typography.bodySmall)
+    }
+}
+</code></pre></details>
+<details class="source" open><summary>app/src/main/java/com/quantum/assistant/ui/login/WelcomeScreen.kt</summary><pre><code>package com.quantum.assistant.ui.login
+
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.slideInVertically
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.Button
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.dp
+import com.quantum.assistant.ui.QuantumStar
+import com.quantum.assistant.ui.theme.QuantumColors
+
+@Composable
+fun WelcomeScreen(onContinue: (String) -&gt; Unit) {
+    var name by remember { mutableStateOf("") }
+    val valid = name.trim().isNotEmpty()
+    Box(Modifier.fillMaxSize().background(QuantumColors.Background).padding(24.dp), contentAlignment = Alignment.Center) {
+        Column(
+            Modifier.fillMaxWidth().background(QuantumColors.BackgroundElevated, RoundedCornerShape(34.dp)).padding(horizontal = 25.dp, vertical = 32.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.Center
+        ) {
+            QuantumStar(Modifier.size(104.dp), glow = true)
+            Spacer(Modifier.height(27.dp))
+            Text("QUANTUM", color = QuantumColors.AccentBright, style = MaterialTheme.typography.labelLarge, fontWeight = FontWeight.Bold)
+            Text("Технологии ближе.", color = QuantumColors.Porcelain, style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.SemiBold, modifier = Modifier.padding(top = 8.dp))
+            Text(
+                "Персональный помощник, который включается только тогда, когда ты этого хочешь.",
+                color = QuantumColors.TextMuted, style = MaterialTheme.typography.bodyMedium,
+                modifier = Modifier.padding(top = 10.dp)
+            )
+            AnimatedVisibility(visible = true, enter = fadeIn() + slideInVertically(initialOffsetY = { it / 5 })) {
+                Column {
+                    Text("Как к тебе обращаться?", color = QuantumColors.Porcelain, style = MaterialTheme.typography.titleMedium, modifier = Modifier.padding(top = 30.dp, bottom = 8.dp))
+                    OutlinedTextField(
+                        value = name, onValueChange = { name = it.take(32) },
+                        modifier = Modifier.fillMaxWidth(), label = { Text("Имя или псевдоним") }, singleLine = true
+                    )
+                    Button(onClick = { if (valid) onContinue(name.trim()) }, enabled = valid, modifier = Modifier.fillMaxWidth().padding(top = 18.dp)) {
+                        Text("Продолжить")
+                    }
+                }
+            }
+            Text(
+                "Это локальный профиль на устройстве. Регистрация и пароль не требуются. Доступ к микрофону будет запрошен отдельно — только при его включении.",
+                color = QuantumColors.TextMuted, style = MaterialTheme.typography.bodySmall,
+                modifier = Modifier.padding(top = 18.dp)
+            )
+        }
+    }
+}
+</code></pre></details>
+<details class="source" open><summary>app/src/main/java/com/quantum/assistant/MainActivity.kt</summary><pre><code>package com.quantum.assistant
+
+import android.os.Bundle
+import androidx.activity.ComponentActivity
+import androidx.activity.compose.setContent
+import androidx.activity.enableEdgeToEdge
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.ui.Modifier
+import androidx.lifecycle.ViewModelProvider
+import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.navigation.compose.NavHost
+import androidx.navigation.compose.composable
+import androidx.navigation.compose.rememberNavController
+import com.quantum.assistant.ui.home.HomeScreen
+import com.quantum.assistant.ui.home.HomeViewModel
+import com.quantum.assistant.ui.home.HomeViewModelFactory
+import com.quantum.assistant.ui.login.WelcomeScreen
+import com.quantum.assistant.ui.plans.PlansScreen
+import com.quantum.assistant.ui.settings.SettingsScreen
+import com.quantum.assistant.ui.theme.QuantumColors
+import com.quantum.assistant.ui.theme.QuantumTheme
+
+class MainActivity : ComponentActivity() {
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        enableEdgeToEdge()
+        val app = application as QuantumApp
+        setContent {
+            QuantumTheme {
+                val nav = rememberNavController()
+                val settings by app.settings.settings.collectAsState()
+                val start = if (app.profile.hasProfile()) "home" else "welcome"
+                val homeVm: HomeViewModel = viewModel(factory = HomeViewModelFactory(app.micSession))
+                Box(Modifier.fillMaxSize().background(QuantumColors.Background)) {
+                    NavHost(nav, startDestination = start) {
+                        composable("welcome") {
+                            WelcomeScreen { displayName -&gt;
+                                app.profile.saveProfile(displayName)
+                                nav.navigate("home") { popUpTo("welcome") { inclusive = true } }
+                            }
+                        }
+                        composable("home") {
+                            HomeScreen(
+                                vm = homeVm,
+                                settings = settings,
+                                profileName = app.profile.displayName(),
+                                onOpenSettings = { nav.navigate("settings") },
+                                onOpenPlans = { nav.navigate("plans") }
+                            )
+                        }
+                        composable("settings") {
+                            SettingsScreen(app.settings, settings) { nav.popBackStack() }
+                        }
+                        composable("plans") {
+                            PlansScreen(
+                                selectedTier = settings.selectedTier,
+                                onSelectTier = app.settings::setSelectedTier,
+                                onBack = { nav.popBackStack() }
+                            )
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    override fun onStop() {
+        val app = application as QuantumApp
+        ViewModelProvider(this, HomeViewModelFactory(app.micSession))[HomeViewModel::class.java].panel.onClose()
+        super.onStop()
+    }
+}
+</code></pre></details>
+<details class="source" open><summary>app/src/main/java/com/quantum/assistant/data/SettingsRepository.kt</summary><pre><code>package com.quantum.assistant.data
+
+import android.content.SharedPreferences
+import com.quantum.assistant.device.LocalTier
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
+
+/** Memory modes from PRODUCT_SPEC. Alpha 0.1 only stores the choice. */
+enum class MemoryMode(val label: String, val description: String) {
+    OFF("Off", "No cross-session memory."),
+    DIALOGUE_ONLY("Dialogue only", "Retain conversation history."),
+    FULL("Full", "Retain useful facts and preferences."),
+    FULL_CONFIGURABLE("Full + configurable", "Full memory with review, edit, pin and delete.")
+}
+
+data class AssistantSettings(
+    val assistantName: String = DEFAULT_NAME,
+    val speechSpeed: Float = 1.0f,
+    val memoryMode: MemoryMode = MemoryMode.OFF,
+    /** User's explicit local-tier choice; null = follow the (advisory) recommendation. No model is installed yet. */
+    val selectedTier: LocalTier? = null
+) {
+    val displayName: String get() = assistantName.trim().ifEmpty { DEFAULT_NAME }
+
+    companion object { const val DEFAULT_NAME = "Quantum" }
+}
+
+/** Tiny storage seam so persistence is unit-testable without Android. */
+interface KeyValueStore {
+    fun getString(key: String): String?
+    fun putString(key: String, value: String)
+}
+
+class SharedPrefsStore(private val prefs: SharedPreferences) : KeyValueStore {
+    override fun getString(key: String): String? = prefs.getString(key, null)
+    override fun putString(key: String, value: String) { prefs.edit().putString(key, value).apply() }
+}
+
+/** Non-sensitive settings only. Reads once at construction; every change is written immediately. */
+class SettingsRepository(private val store: KeyValueStore) {
+    private val _settings = MutableStateFlow(load())
+    val settings: StateFlow&lt;AssistantSettings&gt; = _settings.asStateFlow()
+
+    private fun load(): AssistantSettings {
+        val d = AssistantSettings()
+        return AssistantSettings(
+            assistantName = (store.getString(K_NAME) ?: d.assistantName).take(MAX_NAME),
+            speechSpeed = (store.getString(K_SPEED)?.toFloatOrNull() ?: d.speechSpeed).coerceIn(MIN_SPEED, MAX_SPEED),
+            memoryMode = MemoryMode.entries.firstOrNull { it.name == store.getString(K_MEMORY) } ?: d.memoryMode,
+            selectedTier = LocalTier.entries.firstOrNull { it.name == store.getString(K_TIER) }
+        )
+    }
+
+    fun setAssistantName(name: String) {
+        val v = name.take(MAX_NAME)
+        _settings.value = _settings.value.copy(assistantName = v); store.putString(K_NAME, v)
+    }
+
+    fun setSpeechSpeed(speed: Float) {
+        val v = speed.coerceIn(MIN_SPEED, MAX_SPEED)
+        _settings.value = _settings.value.copy(speechSpeed = v); store.putString(K_SPEED, v.toString())
+    }
+
+    fun setMemoryMode(mode: MemoryMode) {
+        _settings.value = _settings.value.copy(memoryMode = mode); store.putString(K_MEMORY, mode.name)
+    }
+
+    fun setSelectedTier(tier: LocalTier?) {
+        _settings.value = _settings.value.copy(selectedTier = tier); store.putString(K_TIER, tier?.name ?: "")
+    }
+
+    companion object {
+        const val MAX_NAME = 30
+        const val MIN_SPEED = 0.5f
+        const val MAX_SPEED = 2.0f
+        private const val K_NAME = "assistant_name"
+        private const val K_SPEED = "speech_speed"
+        private const val K_MEMORY = "memory_mode"
+        private const val K_TIER = "selected_tier"
+    }
+}
+</code></pre></details>
+<details class="source" open><summary>app/src/main/AndroidManifest.xml</summary><pre><code>&lt;?xml version="1.0" encoding="utf-8"?&gt;
+&lt;manifest xmlns:android="http://schemas.android.com/apk/res/android"&gt;
+    &lt;uses-permission android:name="android.permission.RECORD_AUDIO" /&gt;
+    &lt;uses-permission android:name="android.permission.INTERNET" /&gt;
+
+    &lt;application
+        android:name=".QuantumApp"
+        android:allowBackup="false"
+        android:icon="@mipmap/ic_launcher"
+        android:label="@string/app_name"
+        android:supportsRtl="true"
+        android:theme="@style/Theme.Quantum"&gt;
+        &lt;activity
+            android:name=".MainActivity"
+            android:exported="true"
+            android:windowSoftInputMode="adjustResize"&gt;
+            &lt;intent-filter&gt;
+                &lt;action android:name="android.intent.action.MAIN" /&gt;
+                &lt;category android:name="android.intent.category.LAUNCHER" /&gt;
+            &lt;/intent-filter&gt;
+        &lt;/activity&gt;
+    &lt;/application&gt;
+&lt;/manifest&gt;
+</code></pre></details>
+<details class="source" open><summary>app/src/main/res/drawable/ic_launcher_foreground.xml</summary><pre><code>&lt;vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108"&gt;
+    &lt;path
+        android:fillColor="#FFF4F3EF"
+        android:fillType="evenOdd"
+        android:pathData="M54,16
+            A38,38 0,1 0,54 92
+            A38,38 0,1 0,54 16
+            M54,31
+            A23,23 0,1 1,54 77
+            A23,23 0,1 1,54 31" /&gt;
+    &lt;path
+        android:fillColor="#FFF4F3EF"
+        android:pathData="M54,47
+            A7,7 0,1 0,54 61
+            A7,7 0,1 0,54 47" /&gt;
+&lt;/vector&gt;
+</code></pre></details></section>
+<section id="status"><h2>Implementation status</h2><div class="grid">
+<div class="card"><h3>Working in Alpha 0.2</h3><p class="muted">Local profile · Android speech recognition · explicit microphone permission · panel state machine · local settings persistence · model-tier preference.</p></div>
+<div class="card"><h3>Not connected</h3><p class="muted">Cloud AI · local model binaries · TTS · account backend · password recovery · Google Play Billing · reminder engine · device actions.</p></div>
+<div class="card"><h3>Build verification</h3><p class="muted">This source export does not claim a build or test result. Run the branch CI before merging and inspect on a physical Android device.</p></div>
+</div></section>
+</main>
+<script>
+const states={
+collapsed:["Quantum","Коснись, чтобы открыть панель.","Открыть"],
+expanded:["Готов к работе","Нажми на микрофон, чтобы начать.","Микрофон"],
+listening:["Слушаю тебя","Микрофон включён по твоему действию. Можно остановить вручную.","Стоп"],
+processing:["Обрабатываю","Распознаю речь. Микрофон не запускается повторно.",""],
+speaking:["Говорю","Визуальное состояние ответа. TTS пока не подключён.","Стоп"],
+confirm:["Нужно подтверждение","Ничего не выполнится без явного согласия.","Да / Нет"],
+error:["Не удалось запустить","Проверь разрешение микрофона или доступность SpeechRecognizer.","Понятно"]
+};
+document.querySelectorAll("#stateTabs button").forEach(b=>b.addEventListener("click",()=>{document.querySelectorAll("#stateTabs button").forEach(x=>x.setAttribute("aria-pressed",String(x===b)));const s=states[b.dataset.state];document.getElementById("islandTitle").textContent=s[0];document.getElementById("islandText").textContent=s[1];document.getElementById("islandAction").textContent=s[2];document.getElementById("island").style.borderColor=b.dataset.state==="listening"?"var(--bright)":"var(--line)";}));
+</script></body></html>
