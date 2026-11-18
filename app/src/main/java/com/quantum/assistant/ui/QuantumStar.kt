@@ -31,7 +31,7 @@ fun QuantumStar(modifier: Modifier = Modifier, glow: Boolean = false) {
         // Outer porcelain ring.
         drawCircle(color = QuantumColors.Porcelain, radius = radius, center = c)
         // Cyan inner field leaves a consistent, broad ring.
-        drawCircle(color = QuantumColors.Accent, radius = radius * 0.68f, center = c)
+        drawCircle(color = QuantumColors.Accent, radius = radius * 0.60f, center = c)
         // Center dot echoes the supplied mark.
         drawCircle(color = QuantumColors.Porcelain, radius = radius * 0.18f, center = c)
         // A fine highlight gives the mark a little depth without a 3D effect.
