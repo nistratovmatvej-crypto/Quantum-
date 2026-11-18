@@ -75,7 +75,7 @@ fun HomeScreen(
     }
 
     Box(Modifier.fillMaxSize().background(QuantumColors.Background).safeDrawingPadding()) {
-        Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(horizontal = 22.dp)) {
+        Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(horizontal = 22.dp).padding(top = 76.dp)) {
             Row(
                 Modifier.fillMaxWidth().padding(top = 10.dp, bottom = 26.dp),
                 verticalAlignment = Alignment.CenterVertically
@@ -170,7 +170,7 @@ fun HomeScreen(
             timeoutIsSilenceDetection = vm.panel.timeoutIsSilenceDetection,
             errorMessage = errorMessage,
             actions = actions,
-            modifier = Modifier.align(Alignment.BottomEnd).padding(16.dp)
+            modifier = Modifier.align(Alignment.TopCenter).padding(top = 8.dp)
         )
     }
 }
