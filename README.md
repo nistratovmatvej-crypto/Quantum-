@@ -1,41 +1,34 @@
-# Quantum
+# Quantum Alpha 0.3 — Fluid Island
 
-**Quantum Alpha 0.2** — native Android assistant foundation with a user-controlled microphone and speech-to-text.
+Native Android assistant shell with a premium Quantum Atlantic identity and an opt-in system-wide floating island.
 
 ## Current features
-- First-launch local profile (device-only; not cloud authentication).
-- Quantum Atlantic identity with a concentric geometric logo.
-- Redesigned native Compose home, onboarding, settings, model and subscription presentation.
-- Expandable in-app assistant pill. It is not a system-wide overlay.
-- Microphone permission requested only after the user taps the mic.
-- Android speech-recognition service returns a transcript in the app.
-- Listening stops when the user taps Stop, closes the panel, the app backgrounds, or the silence timer expires.
-- Local model tier selector: Meteor / Comet / Nova. Selection is saved; model files are not bundled.
-- Supernova Pro plan preview. Google Play billing is not configured; purchases are disabled.
-- Settings persist locally.
+- Kotlin + Jetpack Compose native app.
+- Existing in-app assistant panel and PanelController state machine retained.
+- Android SpeechRecognizer transcription after explicit microphone permission.
+- User-enabled Android system overlay implemented with WindowManager TYPE_APPLICATION_OVERLAY.
+- Special-use foreground service with persistent notification.
+- Compact mode while Quantum is backgrounded: smaller, higher, 62% opacity.
+- Restore mode when Quantum returns to foreground.
+- Animated island size morph and touch feedback; long-press dismisses it.
+- Overlay permission is requested only after the user taps “Остров”.
 
 ## Important limitations
-- Recognized text is shown, but no conversational AI provider is connected.
-- Speech recognition availability and offline language packs depend on the Android device. The system recognition service may use the network.
-- No local LLM is bundled; Meteor / Comet / Nova are selectable profiles only.
-- The first-launch profile is local-only, not secure account authentication or cross-device sync.
-- Subscription cards are informational only until Play Console products and billing integration are configured.
-- Device-control actions, TTS, reminders, macros, widgets and notification summaries are not implemented.
-- The assistant pill is inside the app, not an always-on system overlay. The microphone is never always listening.
+- Overlay tap opens the app; microphone permission and capture remain in-app. It does not secretly listen in the background.
+- Speech recognition produces a transcript only. No conversational AI provider or TTS is connected.
+- Android/OEM battery management may stop a long-running foreground service.
+- Android secure/system surfaces may hide overlays.
+- Account backend, local LLM weights, real model downloads, Play Billing, reminders and device actions are not implemented.
+- No physical-device test is claimed. CI build and tests must be checked for this exact commit.
 
-## Design handoff
-- [Interactive HTML source and visual previews](../QUANTUM_DESIGN_SOURCE.html)
-- [Quantum Atlantic design system](docs/QUANTUM_DESIGN_SYSTEM.md)
-- [Design implementation handoff](docs/DESIGN_HANDOFF.md)
-
-## Build and test
-Requires JDK 17 and Android SDK platform 35.
-
+## Build
+Requires JDK 17 and Android SDK platform 35:
 ```bash
 ./gradlew clean testDebugUnitTest
 ./gradlew assembleDebug
 ```
 
-A green GitHub Actions check means CI compiled the project, ran unit tests and produced a debug APK; it does not replace device testing.
-
-See [PRODUCT_SPEC](docs/PRODUCT_SPEC.md), [ARCHITECTURE](docs/ARCHITECTURE.md) and [ROADMAP](docs/ROADMAP.md).
+## Handoff
+- [Design/source HTML](QUANTUM_DESIGN_SOURCE.html)
+- [Fluid design system](docs/QUANTUM_FLUID_DESIGN_SYSTEM.md)
+- [Alpha 0.3 handoff](docs/QUANTUM_0.3_HANDOFF.md)
