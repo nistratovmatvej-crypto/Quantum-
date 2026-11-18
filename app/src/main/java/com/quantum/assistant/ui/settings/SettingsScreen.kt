@@ -19,11 +19,6 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.outlined.Lock
-import androidx.compose.material.icons.outlined.Memory
-import androidx.compose.material.icons.outlined.Person
-import androidx.compose.material.icons.outlined.RecordVoiceOver
-import androidx.compose.material.icons.outlined.Tune
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
@@ -73,7 +68,7 @@ fun SettingsScreen(repo: SettingsRepository, settings: AssistantSettings, onBack
             QuantumStar(Modifier.size(30.dp))
         }
 
-        SettingsGroup("ПРОФИЛЬ", Icons.Outlined.Person) {
+        SettingsGroup("ПРОФИЛЬ") {
             Text("Имя помощника", style = MaterialTheme.typography.bodySmall, color = QuantumColors.TextMuted)
             OutlinedTextField(
                 value = settings.assistantName, onValueChange = repo::setAssistantName,
@@ -83,13 +78,13 @@ fun SettingsScreen(repo: SettingsRepository, settings: AssistantSettings, onBack
             Text("Профиль хранится только на этом устройстве. Сетевой аккаунт не подключён.", style = MaterialTheme.typography.bodySmall, color = QuantumColors.TextMuted)
         }
 
-        SettingsGroup("ГОЛОС", Icons.Outlined.RecordVoiceOver) {
+        SettingsGroup("ГОЛОС") {
             Text("Скорость речи · " + String.format(Locale.US, "%.1fx", settings.speechSpeed), style = MaterialTheme.typography.bodyLarge, color = QuantumColors.Porcelain)
             Slider(value = settings.speechSpeed, onValueChange = { repo.setSpeechSpeed(Math.round(it * 10) / 10f) }, valueRange = 0.5f..2.0f, steps = 14)
             Text("Настройка сохранена. Применение станет доступно после подключения синтеза речи.", style = MaterialTheme.typography.bodySmall, color = QuantumColors.TextMuted)
         }
 
-        SettingsGroup("ПАМЯТЬ", Icons.Outlined.Memory) {
+        SettingsGroup("ПАМЯТЬ") {
             MemoryMode.entries.forEach { mode ->
                 Row(
                     Modifier.fillMaxWidth().clickable(role = Role.RadioButton) { repo.setMemoryMode(mode) }.padding(vertical = 6.dp),
@@ -105,7 +100,7 @@ fun SettingsScreen(repo: SettingsRepository, settings: AssistantSettings, onBack
             Text("Сейчас сохраняется только выбор режима. Сама память ещё не подключена.", style = MaterialTheme.typography.bodySmall, color = QuantumColors.Warning)
         }
 
-        SettingsGroup("ИНТЕЛЛЕКТ НА УСТРОЙСТВЕ", Icons.Outlined.Tune) {
+        SettingsGroup("ИНТЕЛЛЕКТ НА УСТРОЙСТВЕ") {
             Text("Предпочитаемый уровень", style = MaterialTheme.typography.bodyLarge, color = QuantumColors.Porcelain)
             TierRow("Автоматически", "Рекомендация: ${assessment.recommended?.label ?: "нет данных"}", settings.selectedTier == null) { repo.setSelectedTier(null) }
             assessment.tiers.forEach { tier ->
@@ -118,7 +113,7 @@ fun SettingsScreen(repo: SettingsRepository, settings: AssistantSettings, onBack
             )
         }
 
-        SettingsGroup("КОНФИДЕНЦИАЛЬНОСТЬ", Icons.Outlined.Lock) {
+        SettingsGroup("КОНФИДЕНЦИАЛЬНОСТЬ") {
             Text("Микрофон не работает в фоне. Разрешение запрашивается только при нажатии на кнопку микрофона.", style = MaterialTheme.typography.bodyMedium, color = QuantumColors.Porcelain)
             Text(
                 "Управление разрешениями Android",
@@ -129,7 +124,7 @@ fun SettingsScreen(repo: SettingsRepository, settings: AssistantSettings, onBack
             )
         }
 
-        SettingsGroup("О QUANTUM", null) {
+        SettingsGroup("О QUANTUM") {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 QuantumStar(Modifier.size(42.dp))
                 Column(Modifier.padding(start = 12.dp)) {
@@ -144,7 +139,7 @@ fun SettingsScreen(repo: SettingsRepository, settings: AssistantSettings, onBack
 }
 
 @Composable
-private fun SettingsGroup(title: String, icon: androidx.compose.ui.graphics.vector.ImageVector?, content: @Composable () -> Unit) {
+private fun SettingsGroup(title: String, content: @Composable () -> Unit) {
     Card(
         Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(26.dp),
@@ -152,8 +147,7 @@ private fun SettingsGroup(title: String, icon: androidx.compose.ui.graphics.vect
     ) {
         Column(Modifier.padding(18.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
-                if (icon != null) Icon(icon, contentDescription = null, tint = QuantumColors.AccentBright, modifier = Modifier.size(18.dp))
-                Text(title, style = MaterialTheme.typography.labelMedium, color = QuantumColors.AccentBright, modifier = Modifier.padding(start = if (icon == null) 0.dp else 9.dp))
+                Text(title, style = MaterialTheme.typography.labelMedium, color = QuantumColors.AccentBright)
             }
             content()
         }
