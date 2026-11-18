@@ -14,11 +14,16 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawingPadding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material3.Button
+import androidx.compose.material.icons.outlined.Lock
+import androidx.compose.material.icons.outlined.Memory
+import androidx.compose.material.icons.outlined.Person
+import androidx.compose.material.icons.outlined.RecordVoiceOver
+import androidx.compose.material.icons.outlined.Tune
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
@@ -54,39 +59,40 @@ fun SettingsScreen(repo: SettingsRepository, settings: AssistantSettings, onBack
 
     Column(
         Modifier.fillMaxSize().background(QuantumColors.Background).safeDrawingPadding()
-            .verticalScroll(rememberScrollState()).padding(horizontal = 20.dp),
-        verticalArrangement = Arrangement.spacedBy(12.dp)
+            .verticalScroll(rememberScrollState()).padding(horizontal = 22.dp),
+        verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
-        Row(
-            Modifier.fillMaxWidth().padding(top = 8.dp, bottom = 8.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
+        Row(Modifier.fillMaxWidth().padding(top = 8.dp, bottom = 4.dp), verticalAlignment = Alignment.CenterVertically) {
             IconButton(onClick = onBack) {
                 Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back", tint = QuantumColors.Porcelain)
             }
             Column(Modifier.weight(1f)) {
-                Text("Settings", style = MaterialTheme.typography.headlineSmall, color = QuantumColors.Porcelain, fontWeight = FontWeight.SemiBold)
-                Text("Make Quantum yours", style = MaterialTheme.typography.bodySmall, color = QuantumColors.TextMuted)
+                Text("Настройки", style = MaterialTheme.typography.headlineMedium, color = QuantumColors.Porcelain)
+                Text("Настрой Quantum под себя", style = MaterialTheme.typography.bodySmall, color = QuantumColors.TextMuted)
             }
-            QuantumStar(Modifier.size(34.dp).padding(end = 8.dp), glow = false)
+            QuantumStar(Modifier.size(30.dp))
         }
 
-        SettingsCard {
-            Section("ASSISTANT")
+        SettingsGroup("ПРОФИЛЬ", Icons.Outlined.Person) {
+            Text("Имя помощника", style = MaterialTheme.typography.bodySmall, color = QuantumColors.TextMuted)
             OutlinedTextField(
                 value = settings.assistantName, onValueChange = repo::setAssistantName,
-                label = { Text("Assistant name") }, singleLine = true, modifier = Modifier.fillMaxWidth()
+                singleLine = true, modifier = Modifier.fillMaxWidth(),
+                placeholder = { Text("Quantum") }
             )
-            Text("Speech speed · " + String.format(Locale.US, "%.1fx", settings.speechSpeed), style = MaterialTheme.typography.bodyLarge, color = QuantumColors.Porcelain, modifier = Modifier.padding(top = 12.dp))
-            Slider(value = settings.speechSpeed, onValueChange = { repo.setSpeechSpeed(Math.round(it * 10) / 10f) }, valueRange = 0.5f..2.0f, steps = 14)
-            Note("Saved now. Speech speed will apply when text-to-speech is implemented.")
+            Text("Профиль хранится только на этом устройстве. Сетевой аккаунт не подключён.", style = MaterialTheme.typography.bodySmall, color = QuantumColors.TextMuted)
         }
 
-        SettingsCard {
-            Section("MEMORY")
+        SettingsGroup("ГОЛОС", Icons.Outlined.RecordVoiceOver) {
+            Text("Скорость речи · " + String.format(Locale.US, "%.1fx", settings.speechSpeed), style = MaterialTheme.typography.bodyLarge, color = QuantumColors.Porcelain)
+            Slider(value = settings.speechSpeed, onValueChange = { repo.setSpeechSpeed(Math.round(it * 10) / 10f) }, valueRange = 0.5f..2.0f, steps = 14)
+            Text("Настройка сохранена. Применение станет доступно после подключения синтеза речи.", style = MaterialTheme.typography.bodySmall, color = QuantumColors.TextMuted)
+        }
+
+        SettingsGroup("ПАМЯТЬ", Icons.Outlined.Memory) {
             MemoryMode.entries.forEach { mode ->
                 Row(
-                    Modifier.fillMaxWidth().clickable(role = Role.RadioButton) { repo.setMemoryMode(mode) }.padding(vertical = 5.dp),
+                    Modifier.fillMaxWidth().clickable(role = Role.RadioButton) { repo.setMemoryMode(mode) }.padding(vertical = 6.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     RadioButton(selected = settings.memoryMode == mode, onClick = null)
@@ -96,60 +102,59 @@ fun SettingsScreen(repo: SettingsRepository, settings: AssistantSettings, onBack
                     }
                 }
             }
-            Note("Your choice is saved. Memory features are not active yet.")
+            Text("Сейчас сохраняется только выбор режима. Сама память ещё не подключена.", style = MaterialTheme.typography.bodySmall, color = QuantumColors.Warning)
         }
 
-        SettingsCard {
-            Section("ON-DEVICE INTELLIGENCE")
-            Text("Device information", style = MaterialTheme.typography.titleMedium, color = QuantumColors.Porcelain)
-            Text(
-                "RAM: ${device.totalRamMb} MB total · ${device.availableRamMb} MB available\nAndroid API ${device.sdkInt} · ${device.abis.joinToString()}",
-                style = MaterialTheme.typography.bodyMedium, color = QuantumColors.TextMuted,
-                modifier = Modifier.padding(top = 6.dp)
-            )
-            Text("Preferred model tier", style = MaterialTheme.typography.titleMedium, color = QuantumColors.Porcelain, modifier = Modifier.padding(top = 16.dp))
-            TierRow("Automatic", "Recommended: ${assessment.recommended?.label ?: "none"}", settings.selectedTier == null) { repo.setSelectedTier(null) }
-            assessment.tiers.forEach { t ->
-                val detail = t.verdict.label + if (t.reasons.isEmpty()) "" else ": " + t.reasons.joinToString("; ")
-                TierRow(t.tier.label, detail, settings.selectedTier == t.tier) { repo.setSelectedTier(t.tier) }
+        SettingsGroup("ИНТЕЛЛЕКТ НА УСТРОЙСТВЕ", Icons.Outlined.Tune) {
+            Text("Предпочитаемый уровень", style = MaterialTheme.typography.bodyLarge, color = QuantumColors.Porcelain)
+            TierRow("Автоматически", "Рекомендация: ${assessment.recommended?.label ?: "нет данных"}", settings.selectedTier == null) { repo.setSelectedTier(null) }
+            assessment.tiers.forEach { tier ->
+                val detail = tier.verdict.label + if (tier.reasons.isEmpty()) "" else " · " + tier.reasons.joinToString("; ")
+                TierRow(tier.tier.label, detail, settings.selectedTier == tier.tier) { repo.setSelectedTier(tier.tier) }
             }
-            Note("Measurements: ${assessment.measured.joinToString()}. Not measured: ${assessment.notMeasured.joinToString()}. Tier requirements are provisional; no models are installed.")
+            Text(
+                "RAM: ${device.totalRamMb} MB · Android API ${device.sdkInt}. Уровни пока являются профилями выбора: модели не установлены.",
+                style = MaterialTheme.typography.bodySmall, color = QuantumColors.TextMuted
+            )
         }
 
-        SettingsCard {
-            Section("PERMISSIONS")
-            Note("Quantum currently requests no permissions and does not listen in the background. Permissions will be requested only when a feature needs them.")
-            Button(
-                onClick = {
+        SettingsGroup("КОНФИДЕНЦИАЛЬНОСТЬ", Icons.Outlined.Lock) {
+            Text("Микрофон не работает в фоне. Разрешение запрашивается только при нажатии на кнопку микрофона.", style = MaterialTheme.typography.bodyMedium, color = QuantumColors.Porcelain)
+            Text(
+                "Управление разрешениями Android",
+                Modifier.fillMaxWidth().clickable {
                     context.startActivity(Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS, Uri.fromParts("package", context.packageName, null)))
-                },
-                modifier = Modifier.padding(top = 10.dp)
-            ) { Text("Open Android app settings") }
+                }.padding(vertical = 12.dp),
+                color = QuantumColors.AccentBright, fontWeight = FontWeight.SemiBold
+            )
         }
 
-        SettingsCard {
-            Section("ABOUT")
+        SettingsGroup("О QUANTUM", null) {
             Row(verticalAlignment = Alignment.CenterVertically) {
-                QuantumStar(Modifier.padding(end = 12.dp), glow = false)
-                Column {
-                    Text("Quantum", style = MaterialTheme.typography.titleLarge, color = QuantumColors.Porcelain, fontWeight = FontWeight.SemiBold)
+                QuantumStar(Modifier.size(42.dp))
+                Column(Modifier.padding(start = 12.dp)) {
+                    Text("Quantum", style = MaterialTheme.typography.titleLarge, color = QuantumColors.Porcelain)
                     Text("Version ${BuildConfig.VERSION_NAME}", style = MaterialTheme.typography.bodySmall, color = QuantumColors.TextMuted)
                 }
             }
-            Note("Cloud AI, local models, voices and device actions are not available in this build.")
+            Text("Cloud AI, локальные модели, TTS, напоминания и действия устройства пока не доступны.", style = MaterialTheme.typography.bodySmall, color = QuantumColors.TextMuted)
         }
-        Text("Made to feel personal. Designed to stay out of your way.", style = MaterialTheme.typography.bodySmall, color = QuantumColors.TextMuted, modifier = Modifier.padding(top = 6.dp, bottom = 30.dp))
+        Text("Quantum Atlantic · Alpha", style = MaterialTheme.typography.labelSmall, color = QuantumColors.TextMuted, modifier = Modifier.padding(bottom = 26.dp))
     }
 }
 
 @Composable
-private fun SettingsCard(content: @Composable () -> Unit) {
+private fun SettingsGroup(title: String, icon: androidx.compose.ui.graphics.vector.ImageVector?, content: @Composable () -> Unit) {
     Card(
-        modifier = Modifier.fillMaxWidth(),
+        Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(26.dp),
         colors = CardDefaults.cardColors(containerColor = QuantumColors.Surface)
     ) {
-        Column(Modifier.fillMaxWidth().padding(18.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        Column(Modifier.padding(18.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                if (icon != null) Icon(icon, contentDescription = null, tint = QuantumColors.AccentBright, modifier = Modifier.size(18.dp))
+                Text(title, style = MaterialTheme.typography.labelMedium, color = QuantumColors.AccentBright, modifier = Modifier.padding(start = if (icon == null) 0.dp else 9.dp))
+            }
             content()
         }
     }
@@ -167,14 +172,4 @@ private fun TierRow(title: String, detail: String, selected: Boolean, onSelect: 
             Text(detail, style = MaterialTheme.typography.bodySmall, color = QuantumColors.TextMuted)
         }
     }
-}
-
-@Composable
-private fun Section(title: String) {
-    Text(title, style = MaterialTheme.typography.labelMedium, color = QuantumColors.AccentBright, fontWeight = FontWeight.Bold, modifier = Modifier.padding(bottom = 4.dp))
-}
-
-@Composable
-private fun Note(text: String) {
-    Text(text, style = MaterialTheme.typography.bodySmall, color = QuantumColors.TextMuted)
 }
