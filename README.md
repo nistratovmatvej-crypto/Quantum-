@@ -6,7 +6,8 @@
 - First-launch local profile (device-only; not cloud authentication).
 - Quantum Atlantic identity with a concentric geometric logo.
 - Redesigned native Compose home, onboarding, settings, model and subscription presentation.
-- Redesigned in-app assistant pill with spring expansion and active-state logo halo.\n- Optional system-wide floating capsule, user-enabled through Android's overlay permission; compact and translucent while Quantum is in the background.
+- Redesigned in-app assistant pill with spring expansion and active-state logo halo.
+- Optional system-wide floating capsule, user-enabled through Android's overlay permission; compact and translucent while Quantum is in the background.
 - Microphone permission requested only after the user taps the mic.
 - Android speech-recognition service returns a transcript in the app.
 - Listening stops when the user taps Stop, closes the panel, the app backgrounds, or the silence timer expires.
@@ -21,7 +22,8 @@
 - The first-launch profile is local-only, not secure account authentication or cross-device sync.
 - Subscription cards are informational only until Play Console products and billing integration are configured.
 - Device-control actions, TTS, reminders, macros, widgets and notification summaries are not implemented.
-- The system overlay is a lightweight capsule, not a full assistant runtime. Tapping its mic affordance opens Quantum; recording is started separately inside the app.\n- The overlay foreground service may be stopped by Android/OEM power management; it is not guaranteed to survive force-stop or reboot.
+- The system overlay is a lightweight capsule, not a full assistant runtime. Tapping its mic affordance opens Quantum; recording is started separately inside the app.
+- The overlay foreground service may be stopped by Android/OEM power management; it is not guaranteed to survive force-stop or reboot.
 
 ## Design handoff
 - [Interactive HTML source and visual previews](../QUANTUM_DESIGN_SOURCE.html)
@@ -39,4 +41,5 @@ Requires JDK 17 and Android SDK platform 35.
 A green GitHub Actions check means CI compiled the project, ran unit tests and produced a debug APK; it does not replace device testing.
 
 See [PRODUCT_SPEC](docs/PRODUCT_SPEC.md), [ARCHITECTURE](docs/ARCHITECTURE.md) and [ROADMAP](docs/ROADMAP.md).
-\nSee [Quantum Fluid overlay implementation](docs/QUANTUM_FLUID_OVERLAY.md) for Android permissions, behavior and limitations.\n
+
+See [Quantum Fluid overlay implementation](docs/QUANTUM_FLUID_OVERLAY.md) for Android permissions, behavior and limitations.
