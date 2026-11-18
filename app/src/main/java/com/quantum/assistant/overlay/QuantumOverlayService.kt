@@ -84,8 +84,8 @@ class QuantumOverlayService : Service() {
         view.onDrag = { dx, dy ->
             params?.let {
                 it.gravity = Gravity.TOP or Gravity.START
-                it.x = (startX + dx).coerceAtLeast(0)
-                it.y = (startY + dy).coerceAtLeast(dp(4))
+                it.x = (startX + dx.toInt()).coerceAtLeast(0)
+                it.y = (startY + dy.toInt()).coerceAtLeast(dp(4))
                 try { wm.updateViewLayout(view, it) } catch (_: Exception) { }
             }
         }
