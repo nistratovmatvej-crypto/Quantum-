@@ -1,5 +1,8 @@
 package com.quantum.assistant.ui.login
 
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.slideInVertically
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -31,34 +34,37 @@ import com.quantum.assistant.ui.theme.QuantumColors
 fun WelcomeScreen(onContinue: (String) -> Unit) {
     var name by remember { mutableStateOf("") }
     val valid = name.trim().isNotEmpty()
-    Box(Modifier.fillMaxSize().background(QuantumColors.Background).padding(26.dp), contentAlignment = Alignment.Center) {
+    Box(Modifier.fillMaxSize().background(QuantumColors.Background).padding(24.dp), contentAlignment = Alignment.Center) {
         Column(
-            Modifier.fillMaxWidth().background(QuantumColors.Surface, RoundedCornerShape(30.dp)).padding(26.dp),
+            Modifier.fillMaxWidth().background(QuantumColors.BackgroundElevated, RoundedCornerShape(34.dp)).padding(horizontal = 25.dp, vertical = 32.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Center
         ) {
-            QuantumStar(Modifier.size(112.dp), glow = true)
-            Spacer(Modifier.height(22.dp))
+            QuantumStar(Modifier.size(104.dp), glow = true)
+            Spacer(Modifier.height(27.dp))
             Text("QUANTUM", color = QuantumColors.AccentBright, style = MaterialTheme.typography.labelLarge, fontWeight = FontWeight.Bold)
-            Text("Добро пожаловать", color = QuantumColors.Porcelain, style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.SemiBold)
-            Text("Как к тебе обращаться?", color = QuantumColors.TextMuted, modifier = Modifier.padding(top = 8.dp))
-            OutlinedTextField(
-                value = name,
-                onValueChange = { name = it.take(32) },
-                modifier = Modifier.fillMaxWidth().padding(top = 18.dp),
-                label = { Text("Твоё имя или псевдоним") },
-                singleLine = true
-            )
-            Button(
-                onClick = { if (valid) onContinue(name.trim()) },
-                enabled = valid,
-                modifier = Modifier.fillMaxWidth().padding(top = 18.dp)
-            ) { Text("Продолжить") }
+            Text("Технологии ближе.", color = QuantumColors.Porcelain, style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.SemiBold, modifier = Modifier.padding(top = 8.dp))
             Text(
-                "Это локальный профиль на устройстве. Пароль и облачная учётная запись пока не используются.",
-                color = QuantumColors.TextMuted,
-                style = MaterialTheme.typography.bodySmall,
-                modifier = Modifier.padding(top = 14.dp)
+                "Персональный помощник, который включается только тогда, когда ты этого хочешь.",
+                color = QuantumColors.TextMuted, style = MaterialTheme.typography.bodyMedium,
+                modifier = Modifier.padding(top = 10.dp)
+            )
+            AnimatedVisibility(visible = true, enter = fadeIn() + slideInVertically(initialOffsetY = { it / 5 })) {
+                Column {
+                    Text("Как к тебе обращаться?", color = QuantumColors.Porcelain, style = MaterialTheme.typography.titleMedium, modifier = Modifier.padding(top = 30.dp, bottom = 8.dp))
+                    OutlinedTextField(
+                        value = name, onValueChange = { name = it.take(32) },
+                        modifier = Modifier.fillMaxWidth(), label = { Text("Имя или псевдоним") }, singleLine = true
+                    )
+                    Button(onClick = { if (valid) onContinue(name.trim()) }, enabled = valid, modifier = Modifier.fillMaxWidth().padding(top = 18.dp)) {
+                        Text("Продолжить")
+                    }
+                }
+            }
+            Text(
+                "Это локальный профиль на устройстве. Регистрация и пароль не требуются. Доступ к микрофону будет запрошен отдельно — только при его включении.",
+                color = QuantumColors.TextMuted, style = MaterialTheme.typography.bodySmall,
+                modifier = Modifier.padding(top = 18.dp)
             )
         }
     }
