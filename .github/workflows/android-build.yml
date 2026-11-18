@@ -2,7 +2,7 @@ name: Android build and tests
 
 on:
   push:
-    branches: [main, alpha-0.1.1-build-repair]
+    branches: [main, alpha-0.1.1-build-repair, design/quantum-ios-inspired]
   pull_request:
   workflow_dispatch:
 
