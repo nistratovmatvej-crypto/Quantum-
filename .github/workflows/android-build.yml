@@ -2,7 +2,7 @@ name: Android build and tests
 
 on:
   push:
-    branches: [main, alpha-0.1.1-build-repair, design/quantum-ios-inspired, alpha-0.2-microphone-onboarding, design/quantum-premium-2026]
+    branches: [main, alpha-0.1.1-build-repair, design/quantum-ios-inspired, alpha-0.2-microphone-onboarding, design/quantum-premium-2026, feature/quantum-fluid-island]
   pull_request:
   workflow_dispatch:
 
@@ -74,7 +74,7 @@ jobs:
       - name: Upload debug APK
         uses: actions/upload-artifact@v4
         with:
-          name: Quantum-Alpha-0.2.0-debug-apk
+          name: Quantum-Alpha-0.3.0-debug-apk
           path: app/build/outputs/apk/debug/app-debug.apk
           if-no-files-found: error
           retention-days: 30
@@ -82,15 +82,15 @@ jobs:
       - name: Package redesigned Android source
         shell: bash
         run: |
-          zip -r Quantum-Alpha-0.2.0-Redesign-Source.zip \
+          zip -r Quantum-Alpha-0.3.0-Fluid-Island-Source.zip \
             app gradle docs README.md CHANGELOG.md CLAUDE_HANDOFF.md \
             build.gradle.kts settings.gradle.kts gradle.properties gradlew gradlew.bat \
             -x '*/build/*' '*.iml'
       - name: Upload complete Android source ZIP
         uses: actions/upload-artifact@v4
         with:
-          name: Quantum-Alpha-0.2.0-Redesign-Source
-          path: Quantum-Alpha-0.2.0-Redesign-Source.zip
+          name: Quantum-Alpha-0.3.0-Fluid-Island-Source
+          path: Quantum-Alpha-0.3.0-Fluid-Island-Source.zip
           if-no-files-found: error
           retention-days: 30
       - name: Upload standalone HTML design source
