@@ -1,25 +1,18 @@
-# Quantum visual identity — Alpha 0.1.2 design direction
+# Quantum visual identity — Alpha 0.2 premium redesign
 
-## Brand mark
-The supplied concentric-circle symbol is the basis of the Quantum mark. The app uses a native vector/Canvas implementation so it remains sharp at different sizes and does not depend on a remote image.
+This document is superseded by [QUANTUM_DESIGN_SYSTEM.md](QUANTUM_DESIGN_SYSTEM.md), the complete Quantum Atlantic design specification.
 
-## Palette
-- Atlantic background: `#071B22`
-- Elevated background: `#0B252E`
-- Main surface: `#102F39`
-- Raised surface: `#173B46`
-- Signature cyan: `#08A8C9`
-- Bright cyan: `#36C9E5`
-- Warm porcelain: `#F4F3EF`
-- Muted text: `#A4BAC0`
+## Current direction
+- Deep ink background: #071522
+- Elevated navy: #0B1E2D
+- Main surface: #102638
+- Raised surface: #163449
+- Signature cyan: #079FC0
+- Bright cyan: #35BBD5
+- Porcelain: #F4F3EF
+- Muted text: #91A8B5
 
-## Interface principles
-- Native Material 3 components and Android accessibility semantics.
-- iOS-inspired hierarchy: generous spacing, clear type scale, restrained rounded cards, quiet controls and focused primary content.
-- Do not reproduce Apple's proprietary UI, icons, fonts, or branding.
-- Keep the assistant activation control visible and easy to reach.
-- Do not imply unavailable capabilities are active. Alpha status labels remain explicit.
-- Avoid gratuitous gradients, neon effects, excessive glass blur, and dense dashboards.
+The concentric geometric logo replaces the former star identity. The Android mark is drawn natively with Canvas/vector assets.
 
-## Current scope
-This change updates the theme, home screen, settings screen, in-app mark and adaptive launcher icon. It is a visual refresh only: microphone capture, speech recognition, AI providers, local model inference and device actions remain outside this change.
+## Implementation boundary
+Native Compose screens use the shared QuantumTheme. The in-app assistant remains in-app; microphone capture is user-triggered. AI models, account authentication, TTS, reminders, device actions and billing are not connected in Alpha 0.2.
