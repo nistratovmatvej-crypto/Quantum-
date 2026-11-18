@@ -39,7 +39,7 @@ class PanelController(
         }
         override fun onTranscript(text: String) {
             _transcript.value = text
-            onTranscriptFinalized()
+            if (onTranscriptFinalized()) onResponseReady(speak = false)
         }
         override fun onError(reason: String) { onFailure(reason) }
     }
